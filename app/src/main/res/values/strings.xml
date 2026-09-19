@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">Dynamic Spot for Samsung</string>
-    <string name="accessibility_service_label">Dynamic Spot for Samsung overlay</string>
+    <string name="app_name">Galaxy Island</string>
+    <string name="accessibility_service_label">Galaxy Island overlay</string>
     <string name="accessibility_service_description">Draws a small dynamic island over the camera cutout to surface notifications and system events. It reads which app is in the foreground, and reads text from assistant apps only, so it can show their answers in the island. Nothing it reads is ever stored or sent anywhere — the app has no internet access.</string>
-    <string name="notification_service_label">Dynamic Spot for Samsung notifications</string>
+    <string name="notification_service_label">Galaxy Island notifications</string>
 
     <!-- System event labels shown inside the island -->
     <string name="event_charging_started">Charging</string>
@@ -75,7 +75,7 @@
     <string name="assistant_animated_icon_desc">Show an animated sparkles icon instead of the static assistant glyph</string>
 
     <!-- Setup screen -->
-    <string name="setup_title">Dynamic Spot for Samsung</string>
+    <string name="setup_title">Galaxy Island</string>
     <string name="perm_notifications_title">Notification access</string>
     <string name="perm_notifications_desc">Lets the island mirror incoming app notifications.</string>
     <string name="perm_accessibility_title">Overlay access</string>
@@ -302,7 +302,7 @@
     <string name="shizuku_not_running_title">Shizuku isn\'t running</string>
     <string name="shizuku_not_running_desc">Start it from the Shizuku app, then come back. It stops on every reboot.</string>
     <string name="shizuku_permission_title">Grant Shizuku access</string>
-    <string name="shizuku_permission_desc">Tap to let Dynamic Spot for Samsung use Shizuku.</string>
+    <string name="shizuku_permission_desc">Tap to let Galaxy Island use Shizuku.</string>
     <string name="perm_shizuku_title">Shizuku</string>
     <string name="perm_shizuku_desc">Optional. Only needed to hide the status bar notification icons.</string>
 
@@ -566,7 +566,7 @@
     <string name="profile_testing_title">Testing triggers</string>
     <string name="profile_testing_subtitle">Try your dynamic island</string>
     <string name="permission_details_optional">Optional</string>
-    <string name="permission_details_intro">Dynamic Spot for Samsung draws an island over your screen, so it asks for a few sensitive-looking permissions. Here is exactly what each one is used for — the list below is the whole manifest, nothing is left out. Everything happens on your device: the app has no internet permission at all, so nothing can be uploaded, and there is no analytics or tracking of any kind.</string>
+    <string name="permission_details_intro">Galaxy Island draws an island over your screen, so it asks for a few sensitive-looking permissions. Here is exactly what each one is used for — the list below is the whole manifest, nothing is left out. Everything happens on your device: the app has no internet permission at all, so nothing can be uploaded, and there is no analytics or tracking of any kind.</string>
     <string name="permission_details_uses">What it is used for</string>
     <string name="permission_details_footer_title">Check it yourself</string>
     <string name="permission_details_footer">The app is fully open source. Every permission above is declared in the manifest, and you can read the code that uses it on GitHub — including the fact that no network calls are ever made.</string>
@@ -576,7 +576,7 @@
     <string name="profile_github_url">https://github.com/EvanKoe</string>
     <string name="profile_linkedin_url">https://www.linkedin.com/in/evan-koehler-it/</string>
     <string name="app_tagline">An offline dynamic island that follows Google\'s Material Expressive design</string>
-    <string name="app_icon_description">Dynamic Spot for Samsung icon</string>
+    <string name="app_icon_description">Galaxy Island icon</string>
     <string name="dev_card_author">Made by Evan Koehler</string>
     <string name="dev_card_github">View on GitHub</string>
     <string name="dev_card_linkedin">LinkedIn</string>
@@ -590,7 +590,7 @@
     <string name="export_to_path">Settings saved to</string>
     <string name="export_failed">Export failed</string>
     <string name="import_success">Settings imported</string>
-    <string name="import_invalid">Not a valid Dynamic Spot for Samsung settings file</string>
+    <string name="import_invalid">Not a valid Galaxy Island settings file</string>
     <string name="import_failed">Import failed</string>
     <string name="bgColor_oled_title">Use OLED black</string>
     <string name="bgColor_oled_desc">Use pure black for lower consuption on OLED screens</string>
