@@ -1,11 +1,15 @@
-> **Modified version — Cutout Ring Preview, 2026-09-19.** Based on EvanKoe's Expressive Cutout 0.2.0-beta. Adds persistent notification retention, a screen-on camera ring, per-app haptics, reminders, and a Samsung-style preset. See [preview setup and behavior](RING-PREVIEW.md). Original credits and GPL-3.0 licensing are retained. This preview is not an official upstream or Samsung release.
+# Dynamic Spot for Samsung
+
+[Download the private preview](https://github.com/SysopBP/Dynamic-Spot-for-Samsung/releases) · [Setup and features](RING-PREVIEW.md)
+
+> **Modified version — Dynamic Spot for Samsung, 2026-09-19.** Based on EvanKoe's Expressive Cutout 0.2.0-beta. Adds persistent notification retention, a screen-on camera ring, per-app haptics, reminders, and a Samsung-style preset. See [preview setup and behavior](RING-PREVIEW.md). Original credits and GPL-3.0 licensing are retained. This preview is not an official upstream or Samsung release.
 
 <div align="center">
 
 <img width="1280" height="640" alt="Frame 25" src="https://github.com/user-attachments/assets/d801de28-eac6-4ffd-8474-55d9a8af4dc3" />
 
 
-# Expressive Cutout
+## Upstream project: Expressive Cutout
 
 **An offline dynamic island that follows Google's Material Expressive design.**
 
@@ -122,3 +126,4 @@ I would like to thank everyone that takes part to the project on Discord, Github
 Expressive Cutout is free software, licensed under the
 [GNU General Public License v3.0](LICENSE). You may use, study, share and modify it; any
 distributed derivative must remain under the same licence.
+
