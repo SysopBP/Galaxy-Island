@@ -447,6 +447,8 @@ fun DynamicIsland(
     satellitePosition: SatellitePosition = SatellitePosition.RIGHT,
     onSatelliteClick: () -> Unit = {},
     onEmptyClick: () -> Unit = {},
+    onD2Lock: (() -> Unit)? = null,
+    onAssistantLaunch: (() -> Unit)? = null,
     onCenterShortcut: (CenterShortcut) -> Unit = {},
     onExpandedChange: (Boolean) -> Unit,
     onActivate: () -> Unit,
@@ -620,7 +622,7 @@ fun DynamicIsland(
         isExpanded && shownEvent?.assistant != null && shownEvent.assistant.displayAnswerInCutout -> {
             val maxCutoutHeightDp = (screenHeightDp * shownEvent.assistant.maxCutoutHeightPercent / 100)
             val fitHeightDp = if (assistantContentHeightDp > 0) assistantContentHeightDp else 110
-            val targetHeightDp = fitHeightDp.coerceIn(110, maxCutoutHeightDp)
+            val targetHeightDp = com.ekoehler.expressivecutout.core.AssistantSizing.height(screenHeightDp, shownEvent.assistant.maxCutoutHeightPercent, fitHeightDp)
             (targetHeightDp - dims.heightDp)
         }
         isExpanded && shownEvent?.media != null -> {
@@ -829,12 +831,14 @@ fun DynamicIsland(
                             val revealAlpha = (reveal.value / 0.2f).coerceIn(0f, 1f)
                             alpha = (1f - travel).coerceIn(0.25f, 1f) * revealAlpha
                         }
-                        .pointerInput(forcedExpanded, isExpanded, replying, emptyPill, pressWidens, shownEvent?.id) {
+                        .pointerInput(forcedExpanded, isExpanded, replying, emptyPill, pressWidens, shownEvent?.id, onD2Lock != null, onAssistantLaunch != null) {
                             if (forcedExpanded == true) {
                                 return@pointerInput
                             }
 
                             detectTapGestures(
+                                onLongPress = if (onAssistantLaunch != null && !replying && !isExpanded) ({ onAssistantLaunch() }) else null,
+                                onDoubleTap = if (onD2Lock != null && !replying && !isExpanded) ({ onD2Lock() }) else null,
                                 onPress = {
                                     if (replying) {
                                         return@detectTapGestures
@@ -3533,13 +3537,15 @@ private fun AssistantExpandedContent(
                 val textToDisplay = assistant.answerText.takeIf { !it.isNullOrBlank() } ?: "Assistant active..."
                 Text(
                     text = textToDisplay,
+                    fontSize = assistant.textSizeSp.sp,
+                    lineHeight = (assistant.textSizeSp * 1.4f).sp,
                     style = MaterialTheme.typography.bodyMedium,
                     color = contentColor.copy(alpha = 0.88f),
                 )
             }
 
-            // Close action button at the end, obeying action button settings
-            if (showActions) {
+            // Keep dismissal accessible independently of notification action preferences.
+            if (showActions || assistant.showCloseButton) {
                 Spacer(Modifier.height(14.dp))
                 val chipFill = appearance.actionButtonColor?.resolve() ?: event.accent
                 val full = appearance.actionButtonAlignment == ActionButtonAlignment.FULL
@@ -3549,7 +3555,7 @@ private fun AssistantExpandedContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     ActionChip(
-                        action = IslandAction(label = "Close"),
+                        action = IslandAction(label = "Dismiss"),
                         style = appearance.actionButtonStyle,
                         fill = chipFill,
                         heightDp = appearance.actionButtonHeightDp,

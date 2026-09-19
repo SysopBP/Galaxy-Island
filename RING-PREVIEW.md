@@ -1,5 +1,7 @@
 # Galaxy Island
 
+See [D2 connection and compact assistant setup](D2-CONNECTION.md) for the new paired preview.
+
 A modified Expressive Cutout 0.2.0-beta for testing a Samsung-style island, persistent notifications, and a camera notification light. This is a fork of EvanKoe/expressive-cutout; the original GPL-3.0 license and credits are retained. The application ID is `app.cutout.ringpreview`, so it can install alongside upstream.
 
 ## Setup

@@ -594,7 +594,7 @@ private fun AddShortcutRow(icon: ImageVector, label: String, onClick: () -> Unit
 /** A searchable bottom-sheet list of launchable apps; reports the chosen package via [onPick]. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AppPickerSheet(
+internal fun AppPickerSheet(
     onPick: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {

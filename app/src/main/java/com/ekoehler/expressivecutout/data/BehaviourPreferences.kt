@@ -75,6 +75,7 @@ enum class EmptyClickAction { NONE, OPEN_APP, OPEN_CENTER }
  * to the normal cutout (false).
  */
 data class BehaviourSettings(
+    val d2Enabled: Boolean = false,
     val persistentNotifications: Boolean = false,
     val cameraRingEnabled: Boolean = false,
     val cameraRingMode: Int = 1,
@@ -183,6 +184,7 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
         }
 
         BehaviourSettings(
+            d2Enabled = prefs[D2_ENABLED] ?: false,
             persistentNotifications = (prefs[PERSISTENT_NOTIFICATIONS] ?: false),
             cameraRingEnabled = (prefs[CAMERA_RING_ENABLED] ?: false),
             cameraRingMode = (prefs[CAMERA_RING_MODE] ?: 1).coerceIn(0, 2),
@@ -659,7 +661,11 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
         it[PERSISTENT_TIMEOUT_SECONDS] = value.coerceIn(0, 3600)
     }
 
+    /** Enables the paired lock gesture; deliberately excluded from imported settings. */
+    suspend fun setD2Enabled(value: Boolean) = context.behaviourDataStore.edit { it[D2_ENABLED] = value }
+
     private companion object {
+        val D2_ENABLED = booleanPreferencesKey("d2Enabled")
         val PERSISTENT_NOTIFICATIONS = booleanPreferencesKey("persistentNotifications")
         val CAMERA_RING_ENABLED = booleanPreferencesKey("cameraRingEnabled")
         val CAMERA_RING_MODE = intPreferencesKey("cameraRingMode")

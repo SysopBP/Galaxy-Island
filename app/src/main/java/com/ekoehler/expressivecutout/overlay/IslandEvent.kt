@@ -162,6 +162,8 @@ data class IslandEvent(
 
 /** Which parts of the assistant tile to render (display text, max height). */
 data class AssistantTileOptions(
+    val textSizeSp: Int = 14,
+    val showCloseButton: Boolean = true,
     val displayAnswerInCutout: Boolean,
     val maxCutoutHeightPercent: Int,
     val answerText: String?,

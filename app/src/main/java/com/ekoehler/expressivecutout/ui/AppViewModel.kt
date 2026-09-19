@@ -479,6 +479,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         assistantTilePreferences.setIconContainerColor(color)
     }
 
+    fun setAssistantAutoExpand(value: Boolean) = viewModelScope.launch { assistantTilePreferences.setAutoExpand(value) }
+
+    fun setAssistantTextSize(value: Int) = viewModelScope.launch { assistantTilePreferences.setTextSize(value) }
+    fun setAssistantCloseButton(value: Boolean) = viewModelScope.launch { assistantTilePreferences.setCloseButton(value) }
+    fun setAssistantShortcutPackage(value: String?) = viewModelScope.launch { assistantTilePreferences.setShortcutPackage(value) }
+    fun setAssistantLongPress(value: Boolean) = viewModelScope.launch { assistantTilePreferences.setLongPress(value) }
+
     fun setAssistantUseAnimatedIcon(enabled: Boolean) = viewModelScope.launch {
         assistantTilePreferences.setUseAnimatedIcon(enabled)
     }
@@ -587,6 +594,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         appearancePreferences.setShadowEnabled(true)
         appearancePreferences.setPreferDynamicIconColor(true)
     }
+
+    fun setD2Enabled(value: Boolean) = viewModelScope.launch { behaviourPreferences.setD2Enabled(value) }
 
     fun setPersistentNotifications(value: Boolean) = viewModelScope.launch {
         behaviourPreferences.setPersistentNotifications(value)

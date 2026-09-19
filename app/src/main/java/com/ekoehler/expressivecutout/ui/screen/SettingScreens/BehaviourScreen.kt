@@ -94,6 +94,11 @@ internal fun BehaviourScreen(
     ) {
         androidx.compose.material3.Button(onClick = viewModel::applySamsungStylePreset,
             modifier = Modifier.padding(horizontal = 16.dp)) { Text("Apply Samsung-style preset") }
+        SettingsToggleCard(
+            shape = groupedShape(true, true), title = "Double-tap to lock D2",
+            description = "Install the paired D2 build and enable Connect Galaxy Island in its PIN-protected settings. The island hides while D2 is locked or disconnected. Enable Show when empty for an always-available lock target.",
+            checked = behaviour.d2Enabled, onCheckedChange = viewModel::setD2Enabled,
+        )
         Text("Camera ring & persistent alerts", style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(16.dp))
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp),

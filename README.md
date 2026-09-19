@@ -1,5 +1,7 @@
 # Galaxy Island
 
+[Paired D2 connection and compact assistant setup](D2-CONNECTION.md)
+
 [Download the private preview](https://github.com/SysopBP/Galaxy-Island/releases) · [Setup and features](RING-PREVIEW.md)
 
 > **Modified version — Galaxy Island, 2026-09-19.** Based on EvanKoe's Expressive Cutout 0.2.0-beta. Adds persistent notification retention, a screen-on camera ring, per-app haptics, reminders, and a Samsung-style preset. See [preview setup and behavior](RING-PREVIEW.md). Original credits and GPL-3.0 licensing are retained. This preview is not an official upstream or Samsung release.

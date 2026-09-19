@@ -409,8 +409,10 @@ class IconResolver(private val context: Context) {
             appColor = appColor,
             iconContainerColor = settings.iconContainerColor,
             contentIntent = signal.contentIntent,
-            initiallyExpanded = settings.displayAnswerInCutout,
+            initiallyExpanded = settings.displayAnswerInCutout && settings.autoExpand,
             assistant = AssistantTileOptions(
+                textSizeSp = settings.textSizeSp,
+                showCloseButton = settings.showCloseButton,
                 displayAnswerInCutout = settings.displayAnswerInCutout,
                 maxCutoutHeightPercent = settings.maxCutoutHeightPercent,
                 answerText = answerText,

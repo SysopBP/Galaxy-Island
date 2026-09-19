@@ -14,7 +14,9 @@
     <!-- Makes launchable apps visible to the package manager on Android 11+, so the Apps screen
          can list them for the per-app allow/mute switches. The explicit Shizuku entry is what
          lets us tell "not installed" apart from "installed but not running". -->
+    <uses-permission android:name="app.d2lock.permission.ISLAND" />
     <queries>
+        <package android:name="app.d2lock" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

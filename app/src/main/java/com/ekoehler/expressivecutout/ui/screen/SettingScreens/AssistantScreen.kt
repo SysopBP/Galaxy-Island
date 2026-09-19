@@ -36,6 +36,12 @@ internal fun AssistantScreen(
     contentPadding: PaddingValues,
 ) {
     val settings by viewModel.assistantTile.collectAsStateWithLifecycle()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var chooseApp by remember { androidx.compose.runtime.mutableStateOf(false) }
+    if (chooseApp) AppPickerSheet(onPick = {
+        viewModel.setAssistantShortcutPackage(it)
+        chooseApp = false
+    }, onDismiss = { chooseApp = false })
 
     Column(
         modifier = Modifier
@@ -44,6 +50,31 @@ internal fun AssistantScreen(
             .padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        SettingsToggleCard(shape = RoundedCornerShape(16.dp), title = "Automatically expand responses",
+            description = "Off keeps replies in the small island until you tap. Expanded replies scroll within the chosen height.",
+            checked = settings.autoExpand, onCheckedChange = viewModel::setAssistantAutoExpand)
+        Text("Assistant shortcuts", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
+        androidx.compose.material3.Button(onClick = { chooseApp = true }, modifier = Modifier.padding(horizontal = 16.dp)) {
+            Text("Choose assistant app")
+        }
+        Text(settings.shortcutPackage ?: "Using your phone's default assistant", modifier = Modifier.padding(horizontal = 16.dp))
+        androidx.compose.material3.TextButton(onClick = { viewModel.setAssistantShortcutPackage(null) }) { Text("Use phone default") }
+        androidx.compose.material3.TextButton(onClick = {
+            com.ekoehler.expressivecutout.core.AssistantLauncher.open(context, settings.shortcutPackage)
+        }) { Text("Open assistant") }
+        SettingsToggleCard(shape = RoundedCornerShape(16.dp), title = "Long-press island for assistant",
+            description = "Hold the collapsed island to open the chosen app. Enable Show when empty for access between notifications.",
+            checked = settings.longPressShortcut, onCheckedChange = viewModel::setAssistantLongPress)
+        Text("Galaxy Island displays supported assistant responses; choosing an app does not add response capture support. Responses are not saved to history. The D2 connection hides the island while locked.",
+            style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp))
+        var textSize by remember(settings.textSizeSp) { mutableFloatStateOf(settings.textSizeSp.toFloat()) }
+        SettingsSliderCard(shape = RoundedCornerShape(16.dp), title = "Response text size",
+            description = "Adjust readability inside the expanded assistant tile.", valueText = "${textSize.toInt()} sp",
+            value = textSize, valueRange = 12f..24f, step = 1f,
+            onValueChange = { textSize = it }, onCommit = { viewModel.setAssistantTextSize(textSize.toInt()) })
+        SettingsToggleCard(shape = RoundedCornerShape(16.dp), title = "Always show Dismiss",
+            description = "Keep a dismiss button even when other action buttons are hidden.",
+            checked = settings.showCloseButton, onCheckedChange = viewModel::setAssistantCloseButton)
         SettingsToggleCard(
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp, bottomStart = 4.dp, bottomEnd = 4.dp),
             title = stringResource(R.string.assistant_display_answer_title),
@@ -63,7 +94,7 @@ internal fun AssistantScreen(
                 description = stringResource(R.string.assistant_max_height_desc),
                 valueText = stringResource(R.string.assistant_max_height_value, sliderValue.toInt()),
                 value = sliderValue,
-                valueRange = 10f..80f,
+                valueRange = 10f..30f,
                 step = 5f,
                 onValueChange = { sliderValue = it },
                 onCommit = { viewModel.setAssistantMaxCutoutHeightPercent(sliderValue.toInt()) },

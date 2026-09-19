@@ -252,6 +252,8 @@ class IslandOverlayController(private val context: Context) {
     private var phoneSettings: PhoneTileSettings = PhoneTileSettings()
     private var timerSettings: TimerTileSettings = TimerTileSettings()
     private var assistantSettings: AssistantTileSettings = AssistantTileSettings()
+    /** Drives recomposition when the assistant shortcut changes. */
+    private val assistantShortcutState = MutableStateFlow(false)
     private var previewPinned = false
     private var previewExpanded = false
     private var expanded = false
@@ -295,6 +297,8 @@ class IslandOverlayController(private val context: Context) {
     private var timerActive = false
     private var lastTimerEvent: IslandEvent? = null
     private var assistantActive = false
+    /** Suppresses further streaming updates after the user dismisses this assistant session. */
+    private var dismissedAssistantPackage: String? = null
     private var lastAssistantEvent: IslandEvent? = null
     // True while the device is locked (screen off or keyguard active); keeps the locked cutout pinned
     // up (no auto-dismiss) until the screen is unlocked.
@@ -331,7 +335,24 @@ class IslandOverlayController(private val context: Context) {
      * True while the window has been torn down because "hide on lockscreen" or "hide in landscape"
      * is active. Guards signal handling and drives whether the window currently exists.
      */
-    private var overlayHidden = false
+    private var overlayHidden = true
+    /** Unknown D2 state hides the overlay until an authenticated query completes. */
+    private var d2Hidden = true
+    private var d2Generation = 0L
+    private var d2RequestPending = false
+    private var d2MonitorJob: Job? = null
+    private var behaviourLoaded = false
+    private val d2Client = com.ekoehler.expressivecutout.core.D2Client(context)
+    /** A state change hides immediately; a fresh query decides when it can reappear. */
+    private val d2Observer = object : android.database.ContentObserver(android.os.Handler(android.os.Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            if (behaviourState.value.d2Enabled) {
+                d2Generation++
+                d2Hidden = true
+                applyLockVisibility()
+            }
+        }
+    }
     private var savedEventBeforeHide: IslandEvent? = null
 
     /**
@@ -348,7 +369,6 @@ class IslandOverlayController(private val context: Context) {
      */
     fun start() {
         lifecycleOwner.onCreate()
-        addOverlay()
         registerLockReceiver()
         observeIconPreferences()
         observeLayout()
@@ -415,6 +435,8 @@ class IslandOverlayController(private val context: Context) {
      * the system would otherwise keep holding on the island's behalf.
      */
     fun stop() {
+        d2MonitorJob?.cancel()
+        context.contentResolver.unregisterContentObserver(d2Observer)
         satelliteDismissJob?.cancel()
         // The island is going away with a pill still up, so nothing is left to mirror the
         // notification it was standing in for — hand it back to the panel before the collector that
@@ -459,7 +481,8 @@ class IslandOverlayController(private val context: Context) {
             behaviourState.value.hideInLandscape
         val shouldHideLandscape = isLandscapeHidden &&
             currentOrientation == Configuration.ORIENTATION_LANDSCAPE
-        val shouldHide = shouldHideLock || shouldHideLandscape
+        val shouldHide = shouldHideLock || shouldHideLandscape || d2Hidden || d2RequestPending ||
+            (behaviourState.value.d2Enabled && foregroundPackage == "app.d2lock")
 
         when {
             shouldHide && !overlayHidden -> {
@@ -694,6 +717,7 @@ class IslandOverlayController(private val context: Context) {
                 val rot270 = rotation == Surface.ROTATION_270
 
                 ExpressiveCutoutTheme {
+                    val assistantShortcutEnabled by assistantShortcutState.collectAsStateWithLifecycle()
                     DynamicIsland(
                         event = event,
                         ringSettings = behaviour,
@@ -740,6 +764,8 @@ class IslandOverlayController(private val context: Context) {
                         satellitePosition = behaviour.satellitePosition,
                         onSatelliteClick = ::onSatellitePromote,
                         onEmptyClick = ::onEmptyClick,
+                        onD2Lock = if (behaviour.d2Enabled) ::requestD2Lock else null,
+                        onAssistantLaunch = if (assistantShortcutEnabled) ::launchAssistant else null,
                         onCenterShortcut = ::onCenterShortcut,
                         onExpandedChange = ::onExpandedChanged,
                         onActivate = ::onActivate,
@@ -781,6 +807,10 @@ class IslandOverlayController(private val context: Context) {
         behaviourPreferences.settings.collect {
             val previous = behaviourState.value
             behaviourState.value = it
+            if (!behaviourLoaded || previous.d2Enabled != it.d2Enabled) {
+                behaviourLoaded = true
+                observeD2(it.d2Enabled)
+            }
             if (!it.persistentNotifications || !it.cutoutEnabled) pendingNotifications.clear()
             if (previous.persistentNotifications != it.persistentNotifications ||
                 previous.persistentTimeoutSeconds != it.persistentTimeoutSeconds) {
@@ -917,7 +947,18 @@ class IslandOverlayController(private val context: Context) {
 
     /** Mirrors the assistant tile settings into [assistantSettings]. */
     private fun observeAssistantSettings() = scope.launch {
-        assistantTilePreferences.settings.collect { assistantSettings = it }
+        assistantTilePreferences.settings.collect { settings ->
+            assistantSettings = settings
+            assistantShortcutState.value = settings.longPressShortcut
+            currentEvent.value?.let { event ->
+                event.assistant?.let { tile ->
+                    currentEvent.value = event.copy(assistant = tile.copy(
+                        textSizeSp = settings.textSizeSp, showCloseButton = settings.showCloseButton,
+                        maxCutoutHeightPercent = settings.maxCutoutHeightPercent,
+                        displayAnswerInCutout = settings.displayAnswerInCutout))
+                }
+            }
+        }
     }
 
     /**
@@ -948,6 +989,7 @@ class IslandOverlayController(private val context: Context) {
     private fun observeForegroundApp() = scope.launch {
         ForegroundAppBus.packageName.collect { pkg ->
             foregroundPackage = pkg
+            applyLockVisibility()
             applyPlayerAppVisibility()
             applyPhoneAppVisibility()
         }
@@ -1885,6 +1927,7 @@ class IslandOverlayController(private val context: Context) {
             }
 
             if (signal is CutoutSignal.Assistant && !signal.active) {
+                dismissedAssistantPackage = null
                 assistantActive = false
                 lastAssistantEvent = null
                 if (currentEvent.value?.assistant != null) {
@@ -1893,6 +1936,8 @@ class IslandOverlayController(private val context: Context) {
                 return@collect
             }
 
+            if (signal is CutoutSignal.Assistant && signal.packageName == dismissedAssistantPackage) return@collect
+
             val isNoExpandLandscape = currentOrientation == Configuration.ORIENTATION_LANDSCAPE &&
                 (behaviourState.value.horizontalCutoutMode == HorizontalCutoutMode.NORMAL_ONLY ||
                  behaviourState.value.horizontalCutoutMode == HorizontalCutoutMode.STICK_TO_CAMERA)
@@ -1900,7 +1945,7 @@ class IslandOverlayController(private val context: Context) {
             val rawAutoExpand = when (signal) {
                 is CutoutSignal.Notification -> behaviourState.value.notificationsAutoExpand
                 is CutoutSignal.Music -> musicSettings.expandOnPlay
-                is CutoutSignal.Assistant -> assistantSettings.displayAnswerInCutout
+                is CutoutSignal.Assistant -> assistantSettings.displayAnswerInCutout && assistantSettings.autoExpand
                 // The phone tile has no expanded state — it is shown as one bigger normal cutout.
                 is CutoutSignal.Call -> false
                 is CutoutSignal.Timer -> false
@@ -2117,6 +2162,69 @@ class IslandOverlayController(private val context: Context) {
      * launches the chosen app; [NONE] (and, for now, the reserved [OPEN_CENTER]) do nothing beyond
      * the press animation the pill already plays.
      */
+    /** Polls while awake, also failing closed immediately on D2 change notifications. */
+    private fun observeD2(enabled: Boolean) {
+        d2MonitorJob?.cancel()
+        context.contentResolver.unregisterContentObserver(d2Observer)
+        d2Hidden = enabled
+        if (!enabled) return
+        try {
+            context.contentResolver.registerContentObserver(com.ekoehler.expressivecutout.core.D2Client.URI, true, d2Observer)
+        } catch (error: Exception) {
+            Log.w("D2Client", "Cannot observe D2", error)
+        }
+        d2MonitorJob = scope.launch {
+            screenOn.collectLatest { awake ->
+                d2Hidden = true
+                applyLockVisibility()
+                if (awake) while (true) {
+                    val generation = d2Generation
+                    val state = d2Client.state()
+                    if (generation == d2Generation) d2Hidden = d2Client.isLocked(state)
+                    applyLockVisibility()
+                    delay(1000)
+                }
+            }
+        }
+    }
+
+    /** Hides the island before handing the explicit double-tap to D2's lock-only capability. */
+    private fun requestD2Lock() {
+        if (d2RequestPending || !behaviourState.value.d2Enabled) return
+        d2RequestPending = true
+        applyLockVisibility()
+        scope.launch {
+            try {
+                val state = d2Client.state()
+                val token = state?.takeIf { it.getBoolean("ready") }?.let(d2Client::lockToken)
+                if (token == null) {
+                    android.widget.Toast.makeText(context, "Enable Connect Galaxy Island in the paired D2 app first", android.widget.Toast.LENGTH_LONG).show()
+                } else {
+                    val options = ActivityOptions.makeBasic()
+                    if (Build.VERSION.SDK_INT >= 34) options.setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                    token.send(context, 0, null, null, null, null, options.toBundle())
+                    delay(1500)
+                }
+            } catch (error: Exception) {
+                Log.w("D2Client", "Cannot open D2", error)
+                android.widget.Toast.makeText(context, "D2 could not open. Check its setup.", android.widget.Toast.LENGTH_LONG).show()
+            } finally {
+                val generation = d2Generation
+                val finalState = d2Client.state()
+                if (generation == d2Generation) d2Hidden = behaviourState.value.d2Enabled && d2Client.isLocked(finalState)
+                d2RequestPending = false
+                applyLockVisibility()
+            }
+        }
+    }
+
+    /** Opens the selected assistant only while the island is available to the user. */
+    private fun launchAssistant() {
+        if (overlayHidden || d2Hidden || d2RequestPending) return
+        com.ekoehler.expressivecutout.core.AssistantLauncher.open(context, assistantSettings.shortcutPackage)
+    }
+
+    /** Runs the configured single-tap action on a resting island. */
     private fun onEmptyClick() {
         val behaviour = behaviourState.value
         if (behaviour.showsWhenEmptyClickAction != EmptyClickAction.OPEN_APP) return
@@ -2178,6 +2286,11 @@ class IslandOverlayController(private val context: Context) {
      * notification from the system too (like swiping it away in the shade).
      */
     private fun onDismiss() {
+        currentEvent.value?.takeIf { it.assistant != null }?.let {
+            dismissedAssistantPackage = it.packageName
+            assistantActive = false
+            lastAssistantEvent = null
+        }
         currentEvent.value?.notificationKey?.let { CutoutNotificationListenerService.dismiss(it) }
         dismissIsland()
     }
