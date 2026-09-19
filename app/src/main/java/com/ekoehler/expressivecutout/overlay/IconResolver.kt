@@ -1,0 +1,592 @@
+package com.ekoehler.expressivecutout.overlay
+
+import android.content.Context
+import android.graphics.drawable.AdaptiveIconDrawable
+import android.net.Uri
+import android.os.Build
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import com.airbnb.lottie.compose.LottieConstants
+import com.ekoehler.expressivecutout.R
+import com.ekoehler.expressivecutout.core.CutoutSignal
+import com.ekoehler.expressivecutout.core.DynamicTile
+import com.ekoehler.expressivecutout.core.SystemEventPayload
+import com.ekoehler.expressivecutout.core.SystemEventType
+import com.ekoehler.expressivecutout.data.AssistantTileSettings
+import com.ekoehler.expressivecutout.data.CutoutColor
+import com.ekoehler.expressivecutout.data.DynamicRole
+import com.ekoehler.expressivecutout.data.IconSource
+import com.ekoehler.expressivecutout.data.MusicTileSettings
+import com.ekoehler.expressivecutout.data.PhoneTileSettings
+import com.ekoehler.expressivecutout.data.TimerTileSettings
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.sign
+
+/**
+ * The Lottie animation to use for events that read better as motion than a static glyph, or null for
+ * events that have none. A top-level extension (not a member of [SystemEventType]) so the enum stays a
+ * pure domain type, while both the overlay and the settings preview can share this single mapping.
+ */
+fun SystemEventType.animatedIcon(): IslandIcon.Lottie? = when (this) {
+    // Hold on the "closed" frame (frame 0) while the device is locked so the cutout shows the locked
+    // state persistently until the screen is unlocked.
+    SystemEventType.DEVICE_LOCKED -> IslandIcon.Lottie(
+        R.raw.unlock,
+        clipStartFrame = 0,
+        clipEndFrame = 0,
+        tint = true,
+    )
+    // Play briskly and hold on the "open" frame (25 of 80): motion starts at frame 5 and reaches the
+    // open paddle state at frame 25. Starting at frame 5 with speed 2f snaps the paddle open the instant
+    // the phone unlocks without dead latency. Tinted to follow the badge glyph colour.
+    SystemEventType.DEVICE_UNLOCKED -> IslandIcon.Lottie(
+        R.raw.unlock,
+        clipStartFrame = 5,
+        clipEndFrame = 25,
+        speed = 2f,
+        tint = true,
+    )
+    // A charging bolt that loops for as long as the cutout is shown. It sits small within its own
+    // canvas, so scale it up, and tint it to the badge colour so it follows the theme/accent.
+    SystemEventType.CHARGING_STARTED -> IslandIcon.Lottie(
+        R.raw.charging,
+        iterations = LottieConstants.IterateForever,
+        scale = 4f,
+        tint = true,
+    )
+    else -> null
+}
+
+/**
+ * Whether this event's animation loops by default — mirrors its [animatedIcon]'s own iterations, so
+ * the per-event "Loop" toggle starts from the built-in behaviour (charging loops, unlock plays once).
+ */
+fun SystemEventType.animationLoopsByDefault(): Boolean =
+    animatedIcon()?.iterations == LottieConstants.IterateForever
+
+/**
+ * Turns a source-agnostic [CutoutSignal] into a renderable [IslandEvent], applying the user's icon
+ * overrides and rasterising whatever art the signal carried. This is the one place that loads
+ * drawables and reads the content resolver, so all the "impure" resolution lives here. It
+ * deliberately asks the package manager nothing about other apps: everything shown comes from the
+ * notification or media session itself, so the app needs no package-visibility declaration.
+ */
+class IconResolver(private val context: Context) {
+
+    private val idGenerator = AtomicLong(0L)
+
+    fun resolve(
+        signal: CutoutSignal,
+        customIcons: Map<SystemEventType, IconSource>,
+        musicSettings: MusicTileSettings,
+        phoneSettings: PhoneTileSettings,
+        timerSettings: TimerTileSettings,
+        assistantSettings: AssistantTileSettings = AssistantTileSettings(),
+        dynamicEventColor: Boolean = false,
+        dynamicEventColorRole: DynamicRole = DynamicRole.PRIMARY,
+        dynamicEventColorOpacity: Float = 1f,
+        animatedIconEnabled: Map<SystemEventType, Boolean> = emptyMap(),
+        animatedIconLoop: Map<SystemEventType, Boolean> = emptyMap(),
+        eventColorOverrides: Map<SystemEventType, CutoutColor> = emptyMap(),
+        preferDynamicIconColor: Boolean = false,
+    ): IslandEvent {
+        val packageName = when (signal) {
+            is CutoutSignal.Notification -> signal.packageName
+            is CutoutSignal.Music -> signal.packageName
+            is CutoutSignal.Call -> signal.packageName
+            is CutoutSignal.Timer -> signal.packageName
+            is CutoutSignal.Assistant -> signal.packageName
+            is CutoutSignal.System -> null
+        }
+        val appColor = packageName?.let { AppIconColorExtractor.extractAppColor(context, it) }
+
+        return when (signal) {
+            is CutoutSignal.Notification -> resolveNotification(
+                signal,
+                signal.packageName,
+                appColor,
+                dynamicEventColor,
+                dynamicEventColorRole,
+                dynamicEventColorOpacity,
+                preferDynamicIconColor,
+            )
+            is CutoutSignal.System -> resolveSystem(
+                signal.payload,
+                customIcons,
+                dynamicEventColor,
+                dynamicEventColorRole,
+                dynamicEventColorOpacity,
+                animatedIconEnabled,
+                animatedIconLoop,
+                eventColorOverrides,
+            )
+            is CutoutSignal.Music -> resolveMusic(signal, signal.packageName, appColor, musicSettings)
+            is CutoutSignal.Call -> resolveCall(signal, signal.packageName, appColor, phoneSettings)
+            is CutoutSignal.Timer -> resolveTimer(signal, signal.packageName, appColor, timerSettings)
+            is CutoutSignal.Assistant -> resolveAssistant(signal, signal.packageName, appColor, assistantSettings)
+        }
+    }
+
+    private fun resolveNotification(
+        signal: CutoutSignal.Notification,
+        packageName: String,
+        appColor: Color?,
+        dynamicEventColor: Boolean,
+        dynamicEventColorRole: DynamicRole,
+        dynamicEventColorOpacity: Float,
+        preferDynamicIconColor: Boolean = false,
+    ): IslandEvent {
+        val icon = signal.notificationIcon(preferDynamicIconColor) ?: IslandIcon.Vector(Icons.Rounded.Notifications)
+
+        val title = signal.title?.takeIf { it.isNotBlank() }
+        val text = signal.text?.takeIf { it.isNotBlank() }
+        val appName = signal.appName?.takeIf { it.isNotBlank() }
+            ?: NotificationHeaderResolver.resolveAppName(context, signal.packageName)
+        val postTimeMs = NotificationHeaderResolver.resolvePostTimeMs(signal.postTimeMs)
+        return IslandEvent(
+            id = idGenerator.incrementAndGet(),
+            icon = icon,
+            // Expanded shows the notification's title and text; the icon conveys the app. A
+            // notification with no title promotes its text to the primary line rather than
+            // leaving the island to name the app it came from.
+            label = title ?: text ?: context.getString(R.string.island_notification),
+            detail = if (title != null) text else null,
+            appName = appName,
+            postTimeMs = postTimeMs,
+            accent = NOTIFICATION_ACCENT,
+            // A notification badge is a monochrome glyph far more often than a system event's is
+            // art, so it follows "Dynamic color for all events" too when that is on.
+            useThemeColor = dynamicEventColor,
+            themeColorRole = dynamicEventColorRole,
+            themeColorOpacity = dynamicEventColorOpacity,
+            contentIntent = signal.contentIntent,
+            notificationKey = signal.key,
+            progressData = signal.progressData,
+            packageName = packageName,
+            appColor = appColor,
+            actions = signal.actions.map { action ->
+                IslandAction(
+                    label = action.title,
+                    intent = action.intent,
+                    reply = action.reply?.let {
+                        IslandReply(it.resultKey, it.remoteInputs, it.hint)
+                    },
+                )
+            },
+        )
+    }
+
+    /**
+     * Resolves the display icon for a notification. The notification's own artwork always wins over
+     * the posting app's launcher icon, which is only the fallback for a notification that carries
+     * neither a large icon nor a small glyph. [preferDynamicColor] then decides the flavour of each
+     * step rather than whether the app icon comes first.
+     *
+     * When [preferDynamicColor] is true, tintable monochrome art is preferred:
+     * 1. The notification's small status-bar glyph, tinted with dynamic/accent color.
+     * 2. The app's monochrome adaptive icon layer (Android 13+), tinted the same way.
+     * 3. Plain/default app icon or large icon fallback.
+     *
+     * When [preferDynamicColor] is false (default), full-colour art is preferred:
+     * 1. The notification's large icon.
+     * 2. The notification's small glyph, drawn in the badge's ink.
+     * 3. The app's full-color launcher icon from the package manager.
+     */
+    private fun CutoutSignal.Notification.notificationIcon(preferDynamicColor: Boolean): IslandIcon? {
+        val appDrawable = runCatching { context.packageManager.getApplicationIcon(packageName) }.getOrNull()
+        if (preferDynamicColor) {
+            smallIcon?.loadImageBitmapOrNull(context)?.let { return IslandIcon.Raster(it, tint = true) }
+            val monochrome = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                (appDrawable as? AdaptiveIconDrawable)?.monochrome
+            } else {
+                null
+            }
+            if (monochrome != null) {
+                return IslandIcon.Raster(monochrome.toImageBitmap(), tint = true)
+            }
+            appDrawable?.let { return IslandIcon.Raster(it.toImageBitmap(), tint = false) }
+            largeIcon?.loadImageBitmapOrNull(context)?.let { return IslandIcon.Raster(it, tint = false) }
+        } else {
+            largeIcon?.loadImageBitmapOrNull(context)?.let { return IslandIcon.Raster(it, tint = false) }
+            smallIcon?.loadImageBitmapOrNull(context)?.let { return IslandIcon.Raster(it, tint = true) }
+            appDrawable?.let { return IslandIcon.Raster(it.toImageBitmap(), tint = false) }
+        }
+        return null
+    }
+
+    /**
+     * Turns a music signal into a renderable event, choosing between album art and the note glyph.
+     */
+    private fun resolveMusic(
+        signal: CutoutSignal.Music,
+        packageName: String,
+        appColor: Color?,
+        settings: MusicTileSettings,
+    ): IslandEvent {
+        // The collapsed pill normally shows album art; the note glyph stands in when the session
+        // carries none (or the user turned art off). Deliberately not the player's launcher icon:
+        // resolving that would mean asking the system which apps are installed.
+        val title = signal.title?.takeIf { it.isNotBlank() }
+        val appName = signal.packageName.let { NotificationHeaderResolver.resolveAppName(context, it) }
+            ?: NotificationHeaderResolver.resolveAppName(context, context.packageName)
+            ?: context.getString(DynamicTile.MUSIC.labelRes)
+        val postTimeMs = NotificationHeaderResolver.resolvePostTimeMs(0L)
+        return IslandEvent(
+            id = idGenerator.incrementAndGet(),
+            icon = IslandIcon.Vector(DynamicTile.MUSIC.defaultIcon),
+            // Track title on the primary line, artist on the secondary line — both from the media
+            // session itself, so an unnamed track falls back to "Music" rather than a package id.
+            label = title ?: context.getString(DynamicTile.MUSIC.labelRes),
+            detail = signal.artist?.takeIf { it.isNotBlank() },
+            appName = appName,
+            postTimeMs = postTimeMs,
+            accent = Color(DynamicTile.MUSIC.accent),
+            packageName = packageName,
+            appColor = appColor,
+            contentIntent = signal.contentIntent,
+            media = MediaTileOptions(
+                showAlbumArt = settings.showAlbumArt,
+                rotateAlbumArt = settings.rotateAlbumArt,
+                albumArtStroke = settings.albumArtStroke,
+                albumArtStrokeColor = settings.albumArtStrokeColor,
+                showControls = settings.showControls,
+                showProgress = settings.showProgress,
+                skipStyle = settings.skipButton,
+                playPauseStyle = settings.playPauseButton,
+            ),
+        )
+    }
+
+    /**
+     * Turns a call signal into a renderable event. The caller photo is not resolved here; it
+     * arrives live on [OnCallBus] instead.
+     */
+    private fun resolveCall(
+        signal: CutoutSignal.Call,
+        packageName: String,
+        appColor: Color?,
+        settings: PhoneTileSettings,
+    ): IslandEvent {
+        // The live contact photo comes from OnCallBus; this icon is only the no-photo fallback, so a
+        // person avatar reads as "a contact" (the Google-dialer default look) better than a handset.
+        val appName = signal.packageName.let { NotificationHeaderResolver.resolveAppName(context, it) }
+            ?: NotificationHeaderResolver.resolveAppName(context, context.packageName)
+            ?: context.getString(DynamicTile.PHONE.labelRes)
+        val postTimeMs = NotificationHeaderResolver.resolvePostTimeMs(0L)
+        return IslandEvent(
+            id = idGenerator.incrementAndGet(),
+            icon = IslandIcon.Vector(Icons.Rounded.Person),
+            label = signal.callerLabel,
+            appName = appName,
+            postTimeMs = postTimeMs,
+            accent = Color(DynamicTile.PHONE.accent),
+            packageName = packageName,
+            appColor = appColor,
+            iconContainerColor = settings.iconContainerColor,
+            contentIntent = signal.contentIntent,
+            // Deliberately no notificationKey: a swipe should hide the pill, never cancel the
+            // dialer's own call notification (which wouldn't end the call and would just re-post).
+            actions = signal.actions.map { action ->
+                IslandAction(
+                    label = action.title,
+                    intent = action.intent,
+                    destructive = isHangUpLabel(action.title),
+                    answer = isAnswerLabel(action.title),
+                )
+            },
+            call = CallTileOptions(
+                showPhoto = settings.showPhoto,
+                showDuration = settings.showDuration,
+                showActions = settings.showActions,
+                incomingExpandedLayout = settings.expandedIncomingLayout,
+                hangUpColor = settings.hangUpColor,
+                otherButtonColor = settings.otherButtonColor,
+            ),
+        )
+    }
+
+    /**
+     * Map a timer notification's own buttons to island chips verbatim — real labels and intents — so
+     * they always match what the notification shows (Google Clock renders "Pause" / "Add 1 min" while
+     * running and "Resume" / "Reset" while paused). A reset / stop / delete button is tinted apart via
+     * [isResetLabel]. Public so the overlay can re-map them live as the timer's buttons change.
+     */
+    fun timerActions(actions: List<CutoutSignal.Notification.Action>): List<IslandAction> =
+        actions.take(3).map { action ->
+            IslandAction(
+                label = action.title,
+                intent = action.intent,
+                destructive = isResetLabel(action.title),
+            )
+        }
+
+    /**
+     * Turns a timer signal into a renderable event, falling back to the tile's own label when the
+     * clock app names none.
+     */
+    private fun resolveTimer(
+        signal: CutoutSignal.Timer,
+        packageName: String,
+        appColor: Color?,
+        settings: TimerTileSettings,
+    ): IslandEvent {
+        val appName = signal.packageName.let { NotificationHeaderResolver.resolveAppName(context, it) }
+            ?: NotificationHeaderResolver.resolveAppName(context, context.packageName)
+            ?: context.getString(DynamicTile.TIMER.labelRes)
+        val postTimeMs = NotificationHeaderResolver.resolvePostTimeMs(0L)
+        return IslandEvent(
+            id = idGenerator.incrementAndGet(),
+            icon = IslandIcon.Vector(DynamicTile.TIMER.defaultIcon),
+            label = signal.label?.takeIf { it.isNotBlank() }
+                ?: context.getString(DynamicTile.TIMER.labelRes),
+            appName = appName,
+            postTimeMs = postTimeMs,
+            accent = Color(DynamicTile.TIMER.accent),
+            packageName = packageName,
+            appColor = appColor,
+            iconContainerColor = settings.iconContainerColor,
+            contentIntent = signal.contentIntent,
+            // Deliberately no notificationKey: a swipe should hide the pill, never cancel the clock's
+            // own timer notification (which wouldn't stop the timer and would just re-post).
+            actions = timerActions(signal.actions),
+            timer = TimerTileOptions(
+                showActions = settings.showActions,
+                resetColor = settings.resetColor,
+                addButtonColor = settings.addButtonColor,
+            ),
+        )
+    }
+
+    /**
+     * Turns an assistant signal into a renderable event, preferring the spoken title over the body
+     * text.
+     */
+    private fun resolveAssistant(
+        signal: CutoutSignal.Assistant,
+        packageName: String,
+        appColor: Color?,
+        settings: AssistantTileSettings,
+    ): IslandEvent {
+        val defaultLabel = context.getString(DynamicTile.ASSISTANT.labelRes)
+        val rawTitle = signal.title?.takeIf { it.isNotBlank() }
+        val rawText = signal.text?.takeIf { it.isNotBlank() }
+
+        val label = defaultLabel
+        val answerText = when {
+            rawText != null && !rawText.equals(defaultLabel, ignoreCase = true) -> rawText
+            rawTitle != null && !rawTitle.equals(defaultLabel, ignoreCase = true) -> rawTitle
+            else -> null
+        }
+
+        val icon: IslandIcon = if (settings.useAnimatedIcon) {
+            IslandIcon.Lottie(
+                resId = R.raw.assistant_sparkles,
+                iterations = LottieConstants.IterateForever,
+                scale = 1.6f,
+                tint = true,
+            )
+        } else {
+            IslandIcon.Vector(DynamicTile.ASSISTANT.defaultIcon)
+        }
+
+        val appName = signal.packageName.let { NotificationHeaderResolver.resolveAppName(context, it) }
+            ?: NotificationHeaderResolver.resolveAppName(context, context.packageName)
+            ?: context.getString(DynamicTile.ASSISTANT.labelRes)
+        val postTimeMs = NotificationHeaderResolver.resolvePostTimeMs(0L)
+
+        return IslandEvent(
+            id = idGenerator.incrementAndGet(),
+            icon = icon,
+            label = label,
+            detail = answerText,
+            appName = appName,
+            postTimeMs = postTimeMs,
+            accent = Color(DynamicTile.ASSISTANT.accent),
+            packageName = packageName,
+            appColor = appColor,
+            iconContainerColor = settings.iconContainerColor,
+            contentIntent = signal.contentIntent,
+            initiallyExpanded = settings.displayAnswerInCutout,
+            assistant = AssistantTileOptions(
+                displayAnswerInCutout = settings.displayAnswerInCutout,
+                maxCutoutHeightPercent = settings.maxCutoutHeightPercent,
+                answerText = answerText,
+            ),
+        )
+    }
+
+    /** Best-effort match for a timer's reset / stop / delete button by its label, to tint it apart. */
+    private fun isResetLabel(label: String): Boolean {
+        val normalised = label.lowercase()
+        return RESET_KEYWORDS.any { normalised.contains(it) }
+    }
+
+    /**
+     * Best-effort match for a call's hang-up / end-call / decline button by its label. A call
+     * notification carries no machine-readable flag marking which action ends the call, so we key
+     * off the label; failing to match simply leaves that button on the shared "other" colour.
+     */
+    private fun isHangUpLabel(label: String): Boolean {
+        val normalised = label.lowercase()
+        return HANG_UP_KEYWORDS.any { normalised.contains(it) }
+    }
+
+    /**
+     * Best-effort match for an incoming call's answer / accept button by its label, mirroring
+     * [isHangUpLabel]; failing to match simply leaves the tile without a dedicated take-call button.
+     */
+    private fun isAnswerLabel(label: String): Boolean {
+        val normalised = label.lowercase()
+        return ANSWER_KEYWORDS.any { normalised.contains(it) }
+    }
+
+    private fun resolveSystem(
+        payload: SystemEventPayload,
+        customIcons: Map<SystemEventType, IconSource>,
+        dynamicEventColor: Boolean,
+        dynamicEventColorRole: DynamicRole,
+        dynamicEventColorOpacity: Float,
+        animatedIconEnabled: Map<SystemEventType, Boolean>,
+        animatedIconLoop: Map<SystemEventType, Boolean>,
+        eventColorOverrides: Map<SystemEventType, CutoutColor>,
+    ): IslandEvent {
+        val type = payload.type
+        // A user override always wins; otherwise events with an animation (charging / unlock) use it
+        // when the "Animated icon" toggle is on — looping per the "Loop" toggle — and every other
+        // event (or a disabled animation) falls back to the static default glyph.
+        val animated = type.animatedIcon()?.takeIf { animatedIconEnabled[type] ?: true }?.copy(
+            iterations = if (animatedIconLoop[type] ?: type.animationLoopsByDefault()) {
+                LottieConstants.IterateForever
+            } else {
+                1
+            },
+        )
+        val icon = customIcons[type]?.toIslandIconOrNull()
+            ?: payload.iconBitmap?.let { IslandIcon.Raster(it.asImageBitmap()) }
+            ?: payload.vectorIconName?.let { MaterialIconCatalog.iconFor(it)?.let(IslandIcon::Vector) }
+            ?: animated
+            ?: IslandIcon.Vector(type.defaultIcon)
+        val isBatteryEvent = type == SystemEventType.CHARGING_STARTED ||
+            type == SystemEventType.BATTERY_LOW ||
+            type == SystemEventType.CHARGING_COMPLETE
+        val trailingText = payload.collapsedBadgeText ?: if (isBatteryEvent) {
+            val level = getBatteryPercentage(context).coerceIn(0, 100)
+            "$level%"
+        } else {
+            null
+        }
+        val trailingTextColor = if (isBatteryEvent) {
+            batteryTextColorFor(type)
+        } else {
+            null
+        }
+        val statusColor = if (trailingText != null) null else statusDotColorFor(type)
+
+        return IslandEvent(
+            id = idGenerator.incrementAndGet(),
+            icon = icon,
+            label = payload.title ?: context.getString(type.labelRes),
+            detail = payload.subtitle,
+            secondaryLines = payload.secondaryLines,
+            actionIntentAction = payload.actionIntentAction,
+            actionIntentUri = payload.actionIntentUri,
+            accent = Color(type.accent),
+            useThemeColor = dynamicEventColor,
+            themeColorRole = dynamicEventColorRole,
+            themeColorOpacity = dynamicEventColorOpacity,
+            colorOverride = eventColorOverrides[type],
+            statusDotColor = statusColor,
+            trailingText = trailingText,
+            trailingTextColor = trailingTextColor,
+        )
+    }
+
+    /** Resolves the chosen override into a renderable icon, or null to fall back to the default. */
+    private fun IconSource.toIslandIconOrNull(): IslandIcon? = when (this) {
+        is IconSource.Image ->
+            Uri.parse(uri).loadImageBitmapOrNull(context)?.let(IslandIcon::Raster)
+
+        is IconSource.Material ->
+            MaterialIconCatalog.iconFor(iconName)?.let(IslandIcon::Vector)
+    }
+
+    internal companion object {
+        val NOTIFICATION_ACCENT = Color(0xFF38BDF8)
+        val STATUS_COLOR_SUCCESS = Color(0xFF4ADE80)
+        val STATUS_COLOR_WARNING = Color(0xFFFACC15)
+        val STATUS_COLOR_DANGER = Color(0xFFF87171)
+        val STATUS_COLOR_NEUTRAL = Color(0xFF60A5FA)
+
+        fun statusDotColorFor(type: SystemEventType): Color? = when (type) {
+            SystemEventType.CHARGING_STARTED,
+            SystemEventType.CHARGING_COMPLETE,
+            SystemEventType.BATTERY_LOW -> null
+            SystemEventType.WIFI_CONNECTED,
+            SystemEventType.HEADPHONES_CONNECTED,
+            SystemEventType.USB_MOUNTED,
+            SystemEventType.VPN_CONNECTED,
+            SystemEventType.ADB_CONNECTED,
+            SystemEventType.WIRELESS_DEBUGGING_CONNECTED,
+            SystemEventType.BLUETOOTH_CONNECTED,
+            SystemEventType.HOTSPOT_ENABLED,
+            SystemEventType.RINGER_NORMAL -> STATUS_COLOR_SUCCESS
+            SystemEventType.DEVICE_LOCKED,
+            SystemEventType.DEVICE_UNLOCKED,
+            SystemEventType.RINGER_VIBRATE -> STATUS_COLOR_WARNING
+            SystemEventType.CHARGING_STOPPED,
+            SystemEventType.WIFI_DISCONNECTED,
+            SystemEventType.HEADPHONES_DISCONNECTED,
+            SystemEventType.USB_UNMOUNTED,
+            SystemEventType.VPN_DISCONNECTED,
+            SystemEventType.ADB_DISCONNECTED,
+            SystemEventType.WIRELESS_DEBUGGING_DISCONNECTED,
+            SystemEventType.BLUETOOTH_DISCONNECTED,
+            SystemEventType.HOTSPOT_DISABLED,
+            SystemEventType.RINGER_SILENT -> STATUS_COLOR_DANGER
+        }
+
+        /** Returns the semantic accent used for battery percentage text. */
+        fun batteryTextColorFor(type: SystemEventType): Color = when (type) {
+            SystemEventType.CHARGING_STARTED,
+            SystemEventType.CHARGING_COMPLETE -> STATUS_COLOR_SUCCESS
+            SystemEventType.BATTERY_LOW -> STATUS_COLOR_WARNING
+            else -> STATUS_COLOR_SUCCESS
+        }
+
+        /** Reads the current battery percentage, falling back to a full value when unavailable. */
+        fun getBatteryPercentage(context: Context): Int {
+            val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as? android.os.BatteryManager
+            val capacity = batteryManager?.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            if (capacity != null && capacity in 0..100) {
+                return capacity
+            }
+            val intentFilter = android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
+            val batteryStatus = context.registerReceiver(null, intentFilter)
+            val level = batteryStatus?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+            val scale = batteryStatus?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
+            if (level >= 0 && scale > 0) {
+                return (level * 100 / scale)
+            }
+            return 100
+        }
+        /** Lower-cased substrings that mark a call's end or decline action. */
+        val HANG_UP_KEYWORDS = listOf("hang up", "hangup", "hang-up", "end call", "decline", "reject")
+
+        /**
+         * Lower-cased substrings marking an incoming call's answer/accept action, so the tile can
+         * render it as the take-call button (mirrors HANG_UP_KEYWORDS; English covers the common
+         * case).
+         */
+        val ANSWER_KEYWORDS = listOf("answer", "accept", "pick up", "pickup", "take call")
+
+        /**
+         * Lower-cased substrings marking a timer's reset/terminate action, so it can be tinted
+         * apart. "stop" and "delete" cover the common clock apps; "pause" is deliberately excluded
+         * (it isn't a reset, so it takes the shared "other" colour like Add 1 min).
+         */
+        val RESET_KEYWORDS = listOf("reset", "stop", "delete", "cancel", "dismiss")
+    }
+}
