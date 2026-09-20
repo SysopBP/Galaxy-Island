@@ -29,7 +29,15 @@ def seed(mode,accent):
 def click(text):
     for _ in range(15):
         adb('shell','uiautomator','dump','/sdcard/theme-ui.xml')
-        root=ET.fromstring(adb('shell','cat','/sdcard/theme-ui.xml'))
+        xml=adb('shell','cat','/sdcard/theme-ui.xml')
+        root=ET.fromstring(xml)
+        if b"isn't responding" in xml or b"not responding" in xml:
+            for node in root.iter('node'):
+                if node.get('text')=='Wait':
+                    x1,y1,x2,y2=map(int,re.findall(r'\d+',node.get('bounds')))
+                    adb('shell','input','tap',str((x1+x2)//2),str((y1+y2)//2));time.sleep(8)
+                    break
+            continue
         for node in root.iter('node'):
             if node.get('text')==text or node.get('content-desc')==text:
                 x1,y1,x2,y2=map(int,re.findall(r'\d+',node.get('bounds')))
@@ -37,6 +45,10 @@ def click(text):
                 time.sleep(1)
                 return
         time.sleep(1)
+    print(xml.decode())
+    (out/'diagnostic-missing-control.png').write_bytes(adb('exec-out','screencap','-p'))
+    (out/'diagnostic-ui.xml').write_bytes(xml)
+    print(adb('shell','dumpsys','activity','activities').decode()[-12000:])
     raise RuntimeError('Missing visible control: '+text)
 
 out=Path('screenshots');out.mkdir(exist_ok=True)
@@ -50,7 +62,9 @@ for mode,accent,name in [('AMOLED',0xFF529F9C,'18-galaxy-amoled-teal'),('LIGHT',
     seed(mode,accent)
     adb('shell','am','start','-W','-n','app.cutout.ringpreview/com.ekoehler.expressivecutout.MainActivity')
     time.sleep(4)
+    (out/(name+'-startup.png')).write_bytes(adb('exec-out','screencap','-p'))
     click('Profile')
     (out/(name+'.png')).write_bytes(adb('exec-out','screencap','-p'))
     adb('shell','input','swipe','360','1180','360','500','450');time.sleep(1)
     (out/(name+'-accent-controls.png')).write_bytes(adb('exec-out','screencap','-p'))
+

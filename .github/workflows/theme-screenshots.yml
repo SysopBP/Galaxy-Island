@@ -42,4 +42,5 @@ jobs:
         if: always()
         with:
           name: Galaxy-Island-theme-screenshots
-          path: screenshots/*.png
+          path: screenshots/*
+
