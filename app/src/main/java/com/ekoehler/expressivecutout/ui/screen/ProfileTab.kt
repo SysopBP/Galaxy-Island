@@ -163,6 +163,8 @@ private fun ProfileList(
             shape = cardShape(),
         )
 
+        AppAccentCard(viewModel)
+
         TestingCard(shape = cardShape(), onClick = {
             haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             onOpenTesting()

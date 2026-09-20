@@ -221,6 +221,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             initialValue = AppTheme.SYSTEM,
         )
 
+    /** Selected app seed; zero follows Android wallpaper colors. */
+    val themeAccent: StateFlow<Long> = themePreferences.accent.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L,
+    )
+
     val behaviour: StateFlow<BehaviourSettings> =
         behaviourPreferences.settings.stateIn(
             scope = viewModelScope,
@@ -531,6 +536,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun resetLayout() = viewModelScope.launch { layoutPreferences.reset() }
+
+    fun setThemeAccent(argb: Long) = viewModelScope.launch { themePreferences.setAccent(argb) }
 
     fun setTheme(theme: AppTheme) = viewModelScope.launch { themePreferences.setTheme(theme) }
 

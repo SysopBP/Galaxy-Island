@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.ekoehler.expressivecutout.ui.theme.AppTheme
@@ -21,6 +22,14 @@ class ThemePreferences(private val context: Context) : JsonSerializable {
         prefs[THEME]?.let { runCatching { AppTheme.valueOf(it) }.getOrNull() } ?: AppTheme.SYSTEM
     }
 
+    /** Opaque custom seed, or zero to follow the system wallpaper palette. */
+    val accent: Flow<Long> = context.appDataStore.data.map { it[ACCENT] ?: 0L }
+
+    /** Normalizes custom colors to opaque ARGB; zero preserves dynamic colors. */
+    suspend fun setAccent(argb: Long) = context.appDataStore.edit {
+        it[ACCENT] = if (argb == 0L) 0L else (argb and 0xFFFFFF) or 0xFF000000
+    }
+
     /** Sets the theme using AppTheme class */
     suspend fun setTheme(theme: AppTheme) = context.appDataStore.edit { prefs ->
         prefs[THEME] = theme.name
@@ -33,6 +42,7 @@ class ThemePreferences(private val context: Context) : JsonSerializable {
     }
 
     private companion object {
+        val ACCENT = longPreferencesKey("app_accent")
         val THEME = stringPreferencesKey("app_theme")
     }
 
@@ -43,6 +53,7 @@ class ThemePreferences(private val context: Context) : JsonSerializable {
         val t = theme.first()
         return JSONObject().apply {
             put("theme", t.name)
+            put("accent", accent.first())
         }.toString()
     }
 
@@ -51,5 +62,7 @@ class ThemePreferences(private val context: Context) : JsonSerializable {
         val name = JSONObject(json).optString("theme").takeIf { it.isNotEmpty() } ?: return
         val theme = runCatching { AppTheme.valueOf(name) }.getOrNull() ?: return
         setTheme(theme)
+        val data = JSONObject(json)
+        if (data.has("accent")) setAccent(data.optLong("accent", 0L))
     }
 }

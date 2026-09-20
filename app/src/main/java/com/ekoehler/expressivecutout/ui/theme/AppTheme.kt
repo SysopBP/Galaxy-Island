@@ -8,4 +8,5 @@ enum class AppTheme(@param:StringRes val labelRes: Int) {
     SYSTEM(R.string.theme_system),
     LIGHT(R.string.theme_light),
     DARK(R.string.theme_dark),
+    AMOLED(R.string.theme_amoled),
 }

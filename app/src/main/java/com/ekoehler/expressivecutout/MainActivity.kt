@@ -29,12 +29,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel: AppViewModel = viewModel()
             val theme by viewModel.theme.collectAsStateWithLifecycle()
+            val accent by viewModel.themeAccent.collectAsStateWithLifecycle()
             val darkTheme = theme.isDark()
             SideEffect {
                 WindowCompat.getInsetsController(window, window.decorView)
                     .isAppearanceLightStatusBars = !darkTheme
+                WindowCompat.getInsetsController(window, window.decorView)
+                    .isAppearanceLightNavigationBars = !darkTheme
             }
-            ExpressiveCutoutTheme(appTheme = theme) {
+            ExpressiveCutoutTheme(appTheme = theme, accentArgb = accent) {
                 MainScreen(viewModel)
             }
         }
