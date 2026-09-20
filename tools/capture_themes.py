@@ -51,6 +51,15 @@ def click(text):
     print(adb('shell','dumpsys','activity','activities').decode()[-12000:])
     raise RuntimeError('Missing visible control: '+text)
 
+def wait_text(text):
+    for _ in range(15):
+        adb('shell','uiautomator','dump','/sdcard/theme-ui.xml')
+        xml=adb('shell','cat','/sdcard/theme-ui.xml')
+        if any(n.get('text')==text for n in ET.fromstring(xml).iter('node')):
+            return
+        time.sleep(1)
+    raise RuntimeError('Screen did not settle: '+text)
+
 out=Path('screenshots');out.mkdir(exist_ok=True)
 adb('shell','input','keyevent','KEYCODE_WAKEUP');adb('shell','wm','dismiss-keyguard')
 adb('shell','settings','put','system','screen_off_timeout','1800000')
@@ -64,7 +73,9 @@ for mode,accent,name in [('AMOLED',0xFF529F9C,'18-galaxy-amoled-teal'),('LIGHT',
     time.sleep(4)
     (out/(name+'-startup.png')).write_bytes(adb('exec-out','screencap','-p'))
     click('Profile')
+    wait_text('Theme')
     (out/(name+'.png')).write_bytes(adb('exec-out','screencap','-p'))
-    adb('shell','input','swipe','360','1180','360','500','450');time.sleep(1)
+    adb('shell','input','swipe','360','1180','360','500','450');time.sleep(2)
+    adb('shell','uiautomator','dump','/sdcard/theme-ui.xml')
     (out/(name+'-accent-controls.png')).write_bytes(adb('exec-out','screencap','-p'))
 

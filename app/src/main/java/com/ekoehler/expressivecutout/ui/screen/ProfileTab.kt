@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -327,7 +328,7 @@ private fun DevAvatar() {
     )
 }
 
-/** The app-wide theme choice: a title over the segmented selector, in a card of its own. */
+/** Two rows keep all four theme labels readable on narrow screens. */
 @Composable
 private fun ThemeCard(selected: AppTheme, onSelect: (AppTheme) -> Unit, shape: Shape) {
     Card(
@@ -345,12 +346,18 @@ private fun ThemeCard(selected: AppTheme, onSelect: (AppTheme) -> Unit, shape: S
                 text = stringResource(R.string.profile_theme),
                 style = MaterialTheme.typography.labelLarge,
             )
-            ExpressiveSegmentedRow(
-                options = AppTheme.entries.map { stringResource(it.labelRes) },
-                selectedIndex = selected.ordinal,
-                onSelect = { onSelect(AppTheme.entries[it]) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            AppTheme.entries.chunked(2).forEach { choices ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    choices.forEach { choice ->
+                        FilterChip(
+                            selected = selected == choice,
+                            onClick = { onSelect(choice) },
+                            label = { Text(stringResource(choice.labelRes)) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -598,3 +605,4 @@ private fun ExportSettingsCard(
 
     }
 }
+
