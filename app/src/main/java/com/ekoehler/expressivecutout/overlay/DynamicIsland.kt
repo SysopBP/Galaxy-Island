@@ -184,6 +184,8 @@ import kotlin.math.roundToInt
  */
 private val PILL_TEXT_COLOR = Color(0xFFF5F5F5)
 private val PILL_TEXT_COLOR_DARK = Color(0xFF0A0A0A)
+private val GALAXY_GLASS_HIGHLIGHT = Color.White.copy(alpha = 0.16f)
+private val GALAXY_GLASS_SHADE = Color.Black.copy(alpha = 0.12f)
 
 /** Fallback fill for a button asked to be [MusicButtonStyle.filled] before the user picks a colour. */
 private val MUSIC_BUTTON_FILLED_DEFAULT = Color(0xFFE0E0E0)
@@ -1239,6 +1241,10 @@ internal fun IslandSurface(
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             Box(modifier = Modifier.fillMaxSize().background(currentBaseColor)) {
+                // One UI 9 inspired glass treatment: keep the user's selected fill, then layer
+                // restrained translucent highlights/shading over it. This preserves OLED black
+                // and dynamic/app colours while giving both the floating and expanded island a
+                // more dimensional glass surface.
                 Box(modifier = Modifier.fillMaxSize().background(normalBrush))
                 if (progress > 0f) {
                     Box(
@@ -1248,6 +1254,17 @@ internal fun IslandSurface(
                             .background(expandedBrush),
                     )
                 }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(GALAXY_GLASS_SHADE),
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(GALAXY_GLASS_HIGHLIGHT),
+                )
                 content()
             }
         }
