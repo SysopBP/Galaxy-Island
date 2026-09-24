@@ -1212,7 +1212,8 @@ internal fun IslandSurface(
     val expandedBrush = appearance.backgroundExpanded.resolveBrush(appColor, adaptiveColor)
     val normalBaseColor = appearance.backgroundNormal.resolveBaseColor(appColor, adaptiveColor)
     val expandedBaseColor = appearance.backgroundExpanded.resolveBaseColor(appColor, adaptiveColor)
-    val currentBaseColor = lerp(normalBaseColor, expandedBaseColor, progress)
+    val resolvedNormalBaseColor = if (appearance.transparentPill) normalBaseColor.copy(alpha = 0f) else normalBaseColor
+    val currentBaseColor = lerp(resolvedNormalBaseColor, expandedBaseColor, progress)
 
     val repColor = lerp(
         appearance.backgroundNormal.representativeColor(appColor, adaptiveColor),
@@ -1245,7 +1246,9 @@ internal fun IslandSurface(
                 // restrained translucent highlights/shading over it. This preserves OLED black
                 // and dynamic/app colours while giving both the floating and expanded island a
                 // more dimensional glass surface.
-                Box(modifier = Modifier.fillMaxSize().background(normalBrush))
+                if (!appearance.transparentPill) {
+                    Box(modifier = Modifier.fillMaxSize().background(normalBrush))
+                }
                 if (progress > 0f) {
                     Box(
                         modifier = Modifier
