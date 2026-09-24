@@ -1213,7 +1213,7 @@ internal fun IslandSurface(
     val normalBaseColor = appearance.backgroundNormal.resolveBaseColor(appColor, adaptiveColor)
     val expandedBaseColor = appearance.backgroundExpanded.resolveBaseColor(appColor, adaptiveColor)
     val resolvedNormalBaseColor = if (appearance.transparentPill) normalBaseColor.copy(alpha = 0f) else normalBaseColor
-    val currentBaseColor = lerp(resolvedNormalBaseColor, expandedBaseColor, progress)
+    val currentBaseColor = lerp(resolvedNormalBaseColor, glassExpandedBaseColor, progress)
 
     val repColor = lerp(
         appearance.backgroundNormal.representativeColor(appColor, adaptiveColor),
