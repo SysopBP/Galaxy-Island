@@ -1212,7 +1212,7 @@ internal fun IslandSurface(
     val expandedBrush = appearance.backgroundExpanded.resolveBrush(appColor, adaptiveColor)
     val normalBaseColor = appearance.backgroundNormal.resolveBaseColor(appColor, adaptiveColor)
     val expandedBaseColor = appearance.backgroundExpanded.resolveBaseColor(appColor, adaptiveColor)
-    val glassExpandedBaseColor = expandedBaseColor.copy(alpha = minOf(expandedBaseColor.alpha, 0.82f))
+    val glassExpandedBaseColor = expandedBaseColor.copy(alpha = minOf(expandedBaseColor.alpha, appearance.expandedCardOpacity))
     val resolvedNormalBaseColor = if (appearance.transparentPill) normalBaseColor.copy(alpha = 0f) else normalBaseColor
     val currentBaseColor = lerp(resolvedNormalBaseColor, glassExpandedBaseColor, progress)
 
