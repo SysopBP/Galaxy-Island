@@ -756,6 +756,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         behaviourPreferences.setSatellitePosition(position)
     }
 
+    fun setTransparentPill(enabled: Boolean) = viewModelScope.launch {
+        appearancePreferences.setTransparentPill(enabled)
+    }
+
     fun setShadowEnabled(enabled: Boolean) = viewModelScope.launch {
         appearancePreferences.setShadowEnabled(enabled)
     }
