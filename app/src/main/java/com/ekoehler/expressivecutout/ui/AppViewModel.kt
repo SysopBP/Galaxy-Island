@@ -760,6 +760,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         appearancePreferences.setTransparentPill(enabled)
     }
 
+    fun setExpandedCardOpacity(opacity: Float) = viewModelScope.launch {
+        appearancePreferences.setExpandedCardOpacity(opacity)
+    }
+
     fun setShadowEnabled(enabled: Boolean) = viewModelScope.launch {
         appearancePreferences.setShadowEnabled(enabled)
     }

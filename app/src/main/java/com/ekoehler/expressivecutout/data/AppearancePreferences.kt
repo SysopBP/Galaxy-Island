@@ -27,6 +27,7 @@ private val Context.appearanceDataStore: DataStore<Preferences> by preferencesDa
  */
 data class AppearanceSettings(
     val transparentPill: Boolean = DEFAULT_TRANSPARENT_PILL,
+    val expandedCardOpacity: Float = DEFAULT_EXPANDED_CARD_OPACITY,
     val shadowEnabled: Boolean = DEFAULT_SHADOW_ENABLED,
     val strokeEnabled: Boolean = DEFAULT_STROKE_ENABLED,
     val strokeWidthDp: Int = DEFAULT_STROKE_WIDTH_DP,
@@ -52,6 +53,7 @@ data class AppearanceSettings(
 ) {
     companion object {
         const val DEFAULT_TRANSPARENT_PILL = false
+        const val DEFAULT_EXPANDED_CARD_OPACITY = 0.82f
         const val DEFAULT_SHADOW_ENABLED = true
         const val DEFAULT_STROKE_ENABLED = false
         const val DEFAULT_STROKE_WIDTH_DP = 2
@@ -99,6 +101,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
     val settings: Flow<AppearanceSettings> = context.appearanceDataStore.data.map { prefs ->
         AppearanceSettings(
             transparentPill = prefs[TRANSPARENT_PILL] ?: AppearanceSettings.DEFAULT_TRANSPARENT_PILL,
+            expandedCardOpacity = (prefs[EXPANDED_CARD_OPACITY] ?: AppearanceSettings.DEFAULT_EXPANDED_CARD_OPACITY).coerceIn(0f, 1f),
             shadowEnabled = prefs[SHADOW_ENABLED] ?: AppearanceSettings.DEFAULT_SHADOW_ENABLED,
             strokeEnabled = prefs[STROKE_ENABLED] ?: AppearanceSettings.DEFAULT_STROKE_ENABLED,
             strokeWidthDp = (prefs[STROKE_WIDTH] ?: AppearanceSettings.DEFAULT_STROKE_WIDTH_DP)
@@ -141,6 +144,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
         val s = settings.first()
         return JSONObject().apply {
             put("transparentPill", s.transparentPill)
+            put("expandedCardOpacity", s.expandedCardOpacity.toDouble())
             put("shadowEnabled", s.shadowEnabled)
             put("strokeEnabled", s.strokeEnabled)
             put("strokeWidthDp", s.strokeWidthDp)
@@ -175,6 +179,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
         val obj = JSONObject(json)
         context.appearanceDataStore.edit {
             if (obj.has("transparentPill")) it[TRANSPARENT_PILL] = obj.getBoolean("transparentPill")
+            if (obj.has("expandedCardOpacity")) it[EXPANDED_CARD_OPACITY] = obj.getDouble("expandedCardOpacity").toFloat().coerceIn(0f, 1f)
             if (obj.has("shadowEnabled")) it[SHADOW_ENABLED] = obj.getBoolean("shadowEnabled")
             if (obj.has("strokeEnabled")) it[STROKE_ENABLED] = obj.getBoolean("strokeEnabled")
             if (obj.has("strokeWidthDp")) it[STROKE_WIDTH] = obj.getInt("strokeWidthDp")
@@ -236,6 +241,10 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
 
     suspend fun setTransparentPill(enabled: Boolean) = context.appearanceDataStore.edit {
         it[TRANSPARENT_PILL] = enabled
+    }
+
+    suspend fun setExpandedCardOpacity(opacity: Float) = context.appearanceDataStore.edit {
+        it[EXPANDED_CARD_OPACITY] = opacity.coerceIn(0f, 1f)
     }
 
     suspend fun setShadowEnabled(enabled: Boolean) = context.appearanceDataStore.edit {
@@ -347,6 +356,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
 
     private companion object {
         val TRANSPARENT_PILL = booleanPreferencesKey("transparent_pill")
+        val EXPANDED_CARD_OPACITY = floatPreferencesKey("expanded_card_opacity")
         val SHADOW_ENABLED = booleanPreferencesKey("shadow_enabled")
         val STROKE_ENABLED = booleanPreferencesKey("stroke_enabled")
         val STROKE_WIDTH = intPreferencesKey("stroke_width_dp")

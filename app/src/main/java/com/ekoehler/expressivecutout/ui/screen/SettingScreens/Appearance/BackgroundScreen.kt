@@ -111,6 +111,18 @@ internal fun BackgroundScreen(
             modifier = Modifier.fillMaxWidth(),
         )
 
+        if (expandedTab) {
+            AdjustableSlider(
+                label = "Expanded card opacity",
+                valueText = "${(appearance.expandedCardOpacity * 100).roundToInt()}%",
+                value = appearance.expandedCardOpacity,
+                valueRange = 0f..1f,
+                step = 0.05f,
+                onValueChange = viewModel::setExpandedCardOpacity,
+                onCommit = {},
+            )
+        }
+
         FillPickerCard(selected = currentFill, onSelect = onSelect)
     }
 }

@@ -208,7 +208,7 @@ private const val ACTIONS_ROW_SPACING_DP = 12
 private const val SWIPE_UP_SHRINK_THRESHOLD_DP = 24
 
 /** How far the island must be dragged sideways before releasing dismisses it. */
-private const val SWIPE_DISMISS_THRESHOLD_DP = 90
+private const val SWIPE_DISMISS_THRESHOLD_DP = 48
 
 /** How long the "reply sent" confirmation stays on screen before the reply is dispatched. */
 private const val REPLY_SENT_FEEDBACK_MS = 900L
@@ -1212,8 +1212,9 @@ internal fun IslandSurface(
     val expandedBrush = appearance.backgroundExpanded.resolveBrush(appColor, adaptiveColor)
     val normalBaseColor = appearance.backgroundNormal.resolveBaseColor(appColor, adaptiveColor)
     val expandedBaseColor = appearance.backgroundExpanded.resolveBaseColor(appColor, adaptiveColor)
+    val glassExpandedBaseColor = expandedBaseColor.copy(alpha = minOf(expandedBaseColor.alpha, appearance.expandedCardOpacity))
     val resolvedNormalBaseColor = if (appearance.transparentPill) normalBaseColor.copy(alpha = 0f) else normalBaseColor
-    val currentBaseColor = lerp(resolvedNormalBaseColor, expandedBaseColor, progress)
+    val currentBaseColor = lerp(resolvedNormalBaseColor, glassExpandedBaseColor, progress)
 
     val repColor = lerp(
         appearance.backgroundNormal.representativeColor(appColor, adaptiveColor),
