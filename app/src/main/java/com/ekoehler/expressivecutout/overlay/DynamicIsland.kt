@@ -1254,20 +1254,16 @@ internal fun IslandSurface(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .graphicsLayer { alpha = progress }
+                            .graphicsLayer { alpha = progress * appearance.expandedCardOpacity }
                             .background(expandedBrush),
                     )
                 }
+                val glassOverlayAlpha = if (progress > 0f) appearance.expandedCardOpacity else if (appearance.transparentPill) 0f else 1f
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
+                        .graphicsLayer { alpha = glassOverlayAlpha }
                         .background(GalaxyGlassShade),
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(GalaxyGlassHighlight),
                 )
                 content()
             }
