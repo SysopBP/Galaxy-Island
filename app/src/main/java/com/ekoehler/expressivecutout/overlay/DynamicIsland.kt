@@ -208,7 +208,7 @@ private const val ACTIONS_ROW_SPACING_DP = 12
 private const val SWIPE_UP_SHRINK_THRESHOLD_DP = 24
 
 /** How far the island must be dragged sideways before releasing dismisses it. */
-private const val SWIPE_DISMISS_THRESHOLD_DP = 90
+private const val SWIPE_DISMISS_THRESHOLD_DP = 48
 
 /** How long the "reply sent" confirmation stays on screen before the reply is dispatched. */
 private const val REPLY_SENT_FEEDBACK_MS = 900L
