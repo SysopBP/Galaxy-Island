@@ -116,6 +116,14 @@ internal fun AppearanceScreen(
     ) {
         SettingsToggleCard(
             shape = RoundedCornerShape(24.dp),
+            title = "Transparent pill",
+            description = "Make the collapsed island transparent while keeping the expanded island and glass styling independent.",
+            checked = appearance.transparentPill,
+            onCheckedChange = viewModel::setTransparentPill,
+        )
+
+        SettingsToggleCard(
+            shape = RoundedCornerShape(24.dp),
             title = stringResource(R.string.appearance_shadow_title),
             description = stringResource(R.string.appearance_shadow_desc),
             checked = appearance.shadowEnabled,
