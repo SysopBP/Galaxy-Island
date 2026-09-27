@@ -78,6 +78,16 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
+        <!-- Receives event metadata from the LSPosed module running inside SystemUI.
+             Rich notification/media/call payloads continue through the existing app-side monitors. -->
+        <receiver
+            android:name=".xposed.SystemUiBridgeReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="app.cutout.ringpreview.action.XPOSED_SYSTEMUI_EVENT" />
+            </intent-filter>
+        </receiver>
+
         <!-- Handles the buttons on the in-app test notification (reply / mark as read). -->
         <receiver
             android:name=".notifications.TestReplyReceiver"
