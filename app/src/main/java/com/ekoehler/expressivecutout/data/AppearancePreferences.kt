@@ -26,6 +26,7 @@ private val Context.appearanceDataStore: DataStore<Preferences> by preferencesDa
  * reply field shown in the expanded cutout; whether they appear at all is [BehaviourSettings.showActionButtons].
  */
 data class AppearanceSettings(
+    val glassEnabled: Boolean = DEFAULT_GLASS_ENABLED,
     val shadowEnabled: Boolean = DEFAULT_SHADOW_ENABLED,
     val strokeEnabled: Boolean = DEFAULT_STROKE_ENABLED,
     val strokeWidthDp: Int = DEFAULT_STROKE_WIDTH_DP,
@@ -50,6 +51,7 @@ data class AppearanceSettings(
     val pageTransitionStyle: PageTransitionStyle = DEFAULT_PAGE_TRANSITION_STYLE,
 ) {
     companion object {
+        const val DEFAULT_GLASS_ENABLED = true
         const val DEFAULT_SHADOW_ENABLED = true
         const val DEFAULT_STROKE_ENABLED = false
         const val DEFAULT_STROKE_WIDTH_DP = 2
@@ -96,6 +98,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
 
     val settings: Flow<AppearanceSettings> = context.appearanceDataStore.data.map { prefs ->
         AppearanceSettings(
+            glassEnabled = prefs[GLASS_ENABLED] ?: AppearanceSettings.DEFAULT_GLASS_ENABLED,
             shadowEnabled = prefs[SHADOW_ENABLED] ?: AppearanceSettings.DEFAULT_SHADOW_ENABLED,
             strokeEnabled = prefs[STROKE_ENABLED] ?: AppearanceSettings.DEFAULT_STROKE_ENABLED,
             strokeWidthDp = (prefs[STROKE_WIDTH] ?: AppearanceSettings.DEFAULT_STROKE_WIDTH_DP)
@@ -137,6 +140,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
     override suspend fun toJson(): String {
         val s = settings.first()
         return JSONObject().apply {
+            put("glassEnabled", s.glassEnabled)
             put("shadowEnabled", s.shadowEnabled)
             put("strokeEnabled", s.strokeEnabled)
             put("strokeWidthDp", s.strokeWidthDp)
@@ -170,6 +174,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
     override suspend fun fromJson(json: String) {
         val obj = JSONObject(json)
         context.appearanceDataStore.edit {
+            if (obj.has("glassEnabled")) it[GLASS_ENABLED] = obj.getBoolean("glassEnabled")
             if (obj.has("shadowEnabled")) it[SHADOW_ENABLED] = obj.getBoolean("shadowEnabled")
             if (obj.has("strokeEnabled")) it[STROKE_ENABLED] = obj.getBoolean("strokeEnabled")
             if (obj.has("strokeWidthDp")) it[STROKE_WIDTH] = obj.getInt("strokeWidthDp")
@@ -227,6 +232,10 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
         val raw = if (obj.isNull(field)) null else obj.optString(field)
         val color = CutoutColor.deserialize(raw)
         if (color == null) remove(key) else this[key] = color.serialize()
+    }
+
+    suspend fun setGlassEnabled(enabled: Boolean) = context.appearanceDataStore.edit {
+        it[GLASS_ENABLED] = enabled
     }
 
     suspend fun setShadowEnabled(enabled: Boolean) = context.appearanceDataStore.edit {
@@ -337,6 +346,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
     }
 
     private companion object {
+        val GLASS_ENABLED = booleanPreferencesKey("glass_enabled")
         val SHADOW_ENABLED = booleanPreferencesKey("shadow_enabled")
         val STROKE_ENABLED = booleanPreferencesKey("stroke_enabled")
         val STROKE_WIDTH = intPreferencesKey("stroke_width_dp")
