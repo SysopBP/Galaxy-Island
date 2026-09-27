@@ -13,7 +13,61 @@ class GalaxyIslandXposedBridge : XposedModule() {
         if (param.packageName != SYSTEM_UI) return
         log(Log.INFO, TAG, "GALAXY_ISLAND_SYSTEMUI_READY package=${param.packageName}")
         installScreenLifecycleDiagnostics(param.classLoader)
+        installStage2SystemUiDiagnostics(param.classLoader)
     }
+    private fun installStage2SystemUiDiagnostics(classLoader: ClassLoader) {
+        installNamedDiagnostics(classLoader, "NOTIFICATION", listOf(
+            "com.android.systemui.statusbar.notification.collection.NotifCollection" to listOf("onNotificationPosted", "onNotificationRemoved", "onNotificationRankingUpdate"),
+            "com.android.systemui.statusbar.notification.NotificationEntryManager" to listOf("addNotification", "updateNotification", "removeNotification")
+        ))
+        installNamedDiagnostics(classLoader, "MEDIA", listOf(
+            "com.android.systemui.media.controls.pipeline.MediaDataManager" to listOf("onNotificationAdded", "onNotificationRemoved", "onNotificationUpdated", "setTimedOut")
+        ))
+        installNamedDiagnostics(classLoader, "CHARGING", listOf(
+            "com.android.systemui.statusbar.policy.BatteryControllerImpl" to listOf("fireBatteryLevelChanged", "firePowerSaveChanged", "onReceive")
+        ))
+        installNamedDiagnostics(classLoader, "CALL", listOf(
+            "com.android.systemui.statusbar.phone.ongoingcall.OngoingCallController" to listOf("updateChip", "removeChip"),
+            "com.android.systemui.statusbar.phone.ongoingcall.OngoingCallControllerImpl" to listOf("updateChip", "removeChip")
+        ))
+    }
+
+    private fun installNamedDiagnostics(
+        classLoader: ClassLoader,
+        event: String,
+        targets: List<Pair<String, List<String>>>
+    ) {
+        var installed = 0
+        targets.forEach { (className, names) ->
+            val owner = runCatching { Class.forName(className, false, classLoader) }.getOrNull() ?: return@forEach
+            owner.declaredMethods.filter { it.name in names }.distinctBy { it.toGenericString() }.forEach { method ->
+                runCatching {
+                    method.isAccessible = true
+                    hook(method).setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE).intercept { chain ->
+                        val args = chain.args.joinToString(",") { arg ->
+                            when (arg) {
+                                null -> "null"
+                                is Boolean, is Number, is String, is Enum<*> -> arg.toString()
+                                else -> arg.javaClass.name
+                            }
+                        }
+                        log(Log.INFO, TAG, "GALAXY_ISLAND_SYSTEMUI_${event} target=${owner.name}#${method.name} args=[$args]")
+                        chain.proceed()
+                    }
+                    installed++
+                    log(Log.INFO, TAG, "GALAXY_ISLAND_SYSTEMUI_${event}_HOOK_INSTALLED target=${owner.name}#${method.name}")
+                }.onFailure {
+                    log(Log.WARN, TAG, "GALAXY_ISLAND_SYSTEMUI_${event}_HOOK_FAILED target=${owner.name}#${method.name}", it)
+                }
+            }
+        }
+        if (installed == 0) {
+            log(Log.WARN, TAG, "GALAXY_ISLAND_SYSTEMUI_${event}_UNAVAILABLE")
+        } else {
+            log(Log.INFO, TAG, "GALAXY_ISLAND_SYSTEMUI_${event}_READY hooks=$installed")
+        }
+    }
+
     private fun installScreenLifecycleDiagnostics(classLoader: ClassLoader) {
         val targets = listOf(
             "com.android.systemui.keyguard.WakefulnessLifecycle" to listOf("dispatchStartedWakingUp", "dispatchFinishedWakingUp", "dispatchStartedGoingToSleep", "dispatchFinishedGoingToSleep"),
