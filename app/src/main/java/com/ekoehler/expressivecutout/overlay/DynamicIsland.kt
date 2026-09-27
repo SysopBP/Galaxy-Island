@@ -184,8 +184,10 @@ import kotlin.math.roundToInt
  */
 private val PILL_TEXT_COLOR = Color(0xFFF5F5F5)
 private val PILL_TEXT_COLOR_DARK = Color(0xFF0A0A0A)
-private val GalaxyGlassHighlight = Color.White.copy(alpha = 0.16f)
-private val GalaxyGlassShade = Color.Black.copy(alpha = 0.12f)
+private val GalaxyGlassHighlight = Color.White.copy(alpha = 0.24f)
+private val GalaxyGlassInnerHighlight = Color.White.copy(alpha = 0.08f)
+private val GalaxyGlassEdge = Color.White.copy(alpha = 0.18f)
+private val GalaxyGlassShade = Color.Black.copy(alpha = 0.08f)
 
 /** Fallback fill for a button asked to be [MusicButtonStyle.filled] before the user picks a colour. */
 private val MUSIC_BUTTON_FILLED_DEFAULT = Color(0xFFE0E0E0)
@@ -1264,6 +1266,25 @@ internal fun IslandSurface(
                         .fillMaxSize()
                         .graphicsLayer { alpha = glassOverlayAlpha }
                         .background(GalaxyGlassShade),
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = glassOverlayAlpha * 0.70f }
+                        .background(GalaxyGlassInnerHighlight),
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = glassOverlayAlpha }
+                        .border(0.75.dp, GalaxyGlassEdge, shape),
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.25.dp)
+                        .graphicsLayer { alpha = glassOverlayAlpha }
+                        .background(GalaxyGlassHighlight),
                 )
                 content()
             }
