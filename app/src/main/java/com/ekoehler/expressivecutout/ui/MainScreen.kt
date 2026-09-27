@@ -1,5 +1,7 @@
 package com.ekoehler.expressivecutout.ui
 
+import android.annotation.SuppressLint
+
 import android.content.Context
 import android.widget.Toast
 import androidx.activity.BackEventCompat
@@ -85,6 +87,7 @@ private enum class HomeTab(
  * navigation bar. Content padding is computed once here so every tab clears both the top scrim and
  * the floating nav bar without each having to know about them.
  */
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MainScreen(viewModel: AppViewModel = viewModel()) {
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
