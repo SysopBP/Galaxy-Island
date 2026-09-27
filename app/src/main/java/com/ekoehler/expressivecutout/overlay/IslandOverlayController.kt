@@ -519,9 +519,9 @@ class IslandOverlayController(private val context: Context) {
                 removeOverlay()
             }
 
-            !shouldHide && overlayHidden -> {
+            !shouldHide && (overlayHidden || composeView == null) -> {
                 overlayHidden = false
-                addOverlay()
+                if (composeView == null) addOverlay()
                 syncWindowSize()
                 restoreActiveState()
             }
