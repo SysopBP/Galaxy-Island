@@ -1,7 +1,5 @@
 package com.ekoehler.expressivecutout.xposed
 
-import android.content.Intent
-import android.os.SystemClock
 import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
@@ -16,19 +14,16 @@ class GalaxyIslandXposedBridge : XposedModule() {
         private const val ACTION_SYSTEMUI_EVENT = "app.cutout.ringpreview.action.XPOSED_SYSTEMUI_EVENT"
     }
 
+    /**
+     * Stage 3 transport is intentionally log-backed for now. libxposed runs this module inside
+     * SystemUI, but its compile API does not expose legacy AndroidAppHelper/hidden ActivityThread.
+     * Keep hooks safe and observable while the app-side bridge is upgraded to a supported IPC path.
+     */
     private fun emitSystemUiEvent(event: String, owner: String, method: String, args: String? = null) {
-        runCatching {
-            val app = runCatching { android.app.ActivityThread.currentApplication() }.getOrNull() ?: return
-            val intent = Intent(ACTION_SYSTEMUI_EVENT)
-                .setPackage(APP_PACKAGE)
-                .putExtra("event", event)
-                .putExtra("owner", owner)
-                .putExtra("method", method)
-                .putExtra("elapsedRealtime", SystemClock.elapsedRealtime())
-            if (!args.isNullOrBlank()) intent.putExtra("args", args.take(2048))
-            app.sendBroadcast(intent)
-        }.onFailure { log(Log.WARN, TAG, "GALAXY_ISLAND_BRIDGE_EMIT_FAILED event=$event", it) }
+        val payload = args?.take(2048).orEmpty()
+        log(Log.INFO, TAG, "GALAXY_ISLAND_NATIVE_EVENT event=$event target=$owner#$method args=[$payload]")
     }
+
     override fun onModuleLoaded(param: ModuleLoadedParam) { log(Log.INFO, TAG, "GALAXY_ISLAND_XPOSED_LOADED api=$apiVersion framework=$frameworkName") }
     override fun onPackageReady(param: PackageReadyParam) {
         if (param.packageName != SYSTEM_UI) return
