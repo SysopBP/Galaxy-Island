@@ -1222,7 +1222,9 @@ internal fun IslandSurface(
 
     val autoContentColor = if (repColor.luminance() > 0.5f) PILL_TEXT_COLOR_DARK else PILL_TEXT_COLOR
     val contentColor = appearance.textColor?.resolve(appColor, adaptiveColor) ?: autoContentColor
-    val border = if (appearance.strokeEnabled) {
+    val border = if (appearance.glassEnabled) {
+        BorderStroke(1.dp, Color.White.copy(alpha = 0.24f))
+    } else if (appearance.strokeEnabled) {
         val baseColor = appearance.strokeColor.resolve(appColor, adaptiveColor)
         val strokeFinalColor = baseColor.copy(alpha = (baseColor.alpha * appearance.strokeOpacity).coerceIn(0f, 1f))
         BorderStroke(appearance.strokeWidthDp.dp, strokeFinalColor)
@@ -1240,12 +1242,17 @@ internal fun IslandSurface(
         border = border,
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
-            Box(modifier = Modifier.fillMaxSize().background(currentBaseColor)) {
+            Box(modifier = Modifier.fillMaxSize().then(if (appearance.glassEnabled) Modifier else Modifier.background(currentBaseColor))) {
                 // One UI 9 inspired glass treatment: keep the user's selected fill, then layer
                 // restrained translucent highlights/shading over it. This preserves OLED black
                 // and dynamic/app colours while giving both the floating and expanded island a
                 // more dimensional glass surface.
-                Box(modifier = Modifier.fillMaxSize().background(normalBrush))
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = if (appearance.glassEnabled) 0.72f else 1f }
+                        .background(normalBrush),
+                )
                 if (progress > 0f) {
                     Box(
                         modifier = Modifier
