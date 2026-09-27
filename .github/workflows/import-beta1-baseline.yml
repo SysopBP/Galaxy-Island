@@ -1,0 +1,46 @@
+name: Import Galaxy Island Beta.1 Baseline
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/import-beta1-baseline.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch canonical Beta.1 Galaxy Island APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p baseline
+          curl -fL --retry 3             "https://github.com/SysopBP/SamsungLockD2-Public/releases/download/v0.5.1-beta.1/app-debug.apk"             -o baseline/Galaxy-Island-v0.5.1-beta.1-debug.apk
+
+      - name: Verify canonical baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="baseline/Galaxy-Island-v0.5.1-beta.1-debug.apk"
+          EXPECTED_BYTES=63867555
+          EXPECTED_SHA="4f70874c64dec5364b4a993881810f35c140b1487832eb9536ab65883fb0fc81"
+          ACTUAL_BYTES="$(stat -c '%s' "$APK")"
+          ACTUAL_SHA="$(sha256sum "$APK" | awk '{print $1}')"
+          echo "APK_BYTES=$ACTUAL_BYTES"
+          echo "APK_SHA256=$ACTUAL_SHA"
+          test "$ACTUAL_BYTES" = "$EXPECTED_BYTES"
+          test "$ACTUAL_SHA" = "$EXPECTED_SHA"
+
+      - name: Upload canonical Beta.1 baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: Galaxy-Island-Beta1-canonical-debug-APK
+          path: baseline/Galaxy-Island-v0.5.1-beta.1-debug.apk
+          if-no-files-found: error
+          retention-days: 90
