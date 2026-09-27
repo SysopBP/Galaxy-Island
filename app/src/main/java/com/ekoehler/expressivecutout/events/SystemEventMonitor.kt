@@ -1,5 +1,7 @@
 package com.ekoehler.expressivecutout.events
 
+import android.annotation.SuppressLint
+
 import android.app.KeyguardManager
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
@@ -191,6 +193,7 @@ class SystemEventMonitor(
                         )
                     }
                 }
+                @SuppressLint("MissingPermission")
                 BluetoothDevice.ACTION_ACL_CONNECTED -> {
                     if (!canReadBluetoothDevice()) return
                     val device = getBluetoothDevice(intent)
@@ -211,6 +214,7 @@ class SystemEventMonitor(
                         )
                     }
                 }
+                @SuppressLint("MissingPermission")
                 BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
                     if (!canReadBluetoothDevice()) return
                     val device = getBluetoothDevice(intent)
@@ -531,6 +535,7 @@ class SystemEventMonitor(
         )
     }
 
+    @android.annotation.SuppressLint("MissingPermission")
     private fun canReadBluetoothDevice(): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
             ContextCompat.checkSelfPermission(
