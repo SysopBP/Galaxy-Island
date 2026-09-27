@@ -24,7 +24,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p baseline
-          curl -fL --retry 3             "https://github.com/SysopBP/SamsungLockD2-Public/releases/download/v0.5.1-beta.1/app-debug.apk"             -o baseline/Galaxy-Island-v0.5.1-beta.1-debug.apk
+          gh api repos/SysopBP/SamsungLockD2-Public/releases/assets/585243593 \
+            -H "Accept: application/octet-stream" \
+            > baseline/Galaxy-Island-v0.5.1-beta.1-debug.apk
 
       - name: Verify canonical baseline
         shell: bash
