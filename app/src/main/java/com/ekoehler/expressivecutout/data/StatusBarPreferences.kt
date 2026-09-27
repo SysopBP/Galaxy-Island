@@ -40,6 +40,20 @@ class StatusBarPreferences(private val context: Context) : JsonSerializable {
         prefs[SILENCE_ALERTS] ?: false
     }
 
+    /** Master switch for Galaxy Island's complete status-bar replacement surface. */
+    val replacementEnabled: Flow<Boolean> = context.statusBarDataStore.data.map { prefs ->
+        prefs[REPLACEMENT_ENABLED] ?: false
+    }
+
+    val replacementNotifications: Flow<Boolean> = replacementFlag(REPLACEMENT_NOTIFICATIONS)
+    val replacementCellular: Flow<Boolean> = replacementFlag(REPLACEMENT_CELLULAR)
+    val replacementWifi: Flow<Boolean> = replacementFlag(REPLACEMENT_WIFI)
+    val replacementBattery: Flow<Boolean> = replacementFlag(REPLACEMENT_BATTERY)
+    val replacementConnectivity: Flow<Boolean> = replacementFlag(REPLACEMENT_CONNECTIVITY)
+
+    private fun replacementFlag(key: Preferences.Key<Boolean>): Flow<Boolean> =
+        context.statusBarDataStore.data.map { prefs -> prefs[key] ?: true }
+
     suspend fun setHideNotificationIcons(hide: Boolean) = context.statusBarDataStore.edit { prefs ->
         prefs[HIDE_NOTIFICATION_ICONS] = hide
     }
@@ -56,11 +70,30 @@ class StatusBarPreferences(private val context: Context) : JsonSerializable {
         prefs[SILENCE_ALERTS] = silence
     }
 
+    suspend fun setReplacementEnabled(enabled: Boolean) = context.statusBarDataStore.edit { prefs ->
+        prefs[REPLACEMENT_ENABLED] = enabled
+    }
+
+    suspend fun setReplacementNotifications(enabled: Boolean) = setReplacementFlag(REPLACEMENT_NOTIFICATIONS, enabled)
+    suspend fun setReplacementCellular(enabled: Boolean) = setReplacementFlag(REPLACEMENT_CELLULAR, enabled)
+    suspend fun setReplacementWifi(enabled: Boolean) = setReplacementFlag(REPLACEMENT_WIFI, enabled)
+    suspend fun setReplacementBattery(enabled: Boolean) = setReplacementFlag(REPLACEMENT_BATTERY, enabled)
+    suspend fun setReplacementConnectivity(enabled: Boolean) = setReplacementFlag(REPLACEMENT_CONNECTIVITY, enabled)
+
+    private suspend fun setReplacementFlag(key: Preferences.Key<Boolean>, enabled: Boolean) =
+        context.statusBarDataStore.edit { prefs -> prefs[key] = enabled }
+
     private companion object {
         val HIDE_NOTIFICATION_ICONS = booleanPreferencesKey("hide_notification_icons")
         val HIDE_SYSTEM_INFO = booleanPreferencesKey("hide_system_info")
         val HIDE_CLOCK = booleanPreferencesKey("hide_clock")
         val SILENCE_ALERTS = booleanPreferencesKey("silence_alerts")
+        val REPLACEMENT_ENABLED = booleanPreferencesKey("replacement_enabled")
+        val REPLACEMENT_NOTIFICATIONS = booleanPreferencesKey("replacement_notifications")
+        val REPLACEMENT_CELLULAR = booleanPreferencesKey("replacement_cellular")
+        val REPLACEMENT_WIFI = booleanPreferencesKey("replacement_wifi")
+        val REPLACEMENT_BATTERY = booleanPreferencesKey("replacement_battery")
+        val REPLACEMENT_CONNECTIVITY = booleanPreferencesKey("replacement_connectivity")
     }
 
     /**
@@ -73,11 +106,23 @@ class StatusBarPreferences(private val context: Context) : JsonSerializable {
         val hideSystemInfo = hideSystemInfo.first()
         val hideClock = hideClock.first()
         val silence = silenceAlerts.first()
+        val replacement = replacementEnabled.first()
+        val replacementNotifications = replacementNotifications.first()
+        val replacementCellular = replacementCellular.first()
+        val replacementWifi = replacementWifi.first()
+        val replacementBattery = replacementBattery.first()
+        val replacementConnectivity = replacementConnectivity.first()
         return JSONObject().apply {
             put("hideNotificationIcons", hideIcons)
             put("hideSystemInfo", hideSystemInfo)
             put("hideClock", hideClock)
             put("silenceAlerts", silence)
+            put("replacementEnabled", replacement)
+            put("replacementNotifications", replacementNotifications)
+            put("replacementCellular", replacementCellular)
+            put("replacementWifi", replacementWifi)
+            put("replacementBattery", replacementBattery)
+            put("replacementConnectivity", replacementConnectivity)
         }.toString()
     }
 
@@ -101,5 +146,11 @@ class StatusBarPreferences(private val context: Context) : JsonSerializable {
         if (obj.has("silenceAlerts")) {
             setSilenceAlerts(obj.optBoolean("silenceAlerts", false))
         }
+        if (obj.has("replacementEnabled")) setReplacementEnabled(obj.optBoolean("replacementEnabled", false))
+        if (obj.has("replacementNotifications")) setReplacementNotifications(obj.optBoolean("replacementNotifications", true))
+        if (obj.has("replacementCellular")) setReplacementCellular(obj.optBoolean("replacementCellular", true))
+        if (obj.has("replacementWifi")) setReplacementWifi(obj.optBoolean("replacementWifi", true))
+        if (obj.has("replacementBattery")) setReplacementBattery(obj.optBoolean("replacementBattery", true))
+        if (obj.has("replacementConnectivity")) setReplacementConnectivity(obj.optBoolean("replacementConnectivity", true))
     }
 }
