@@ -25,9 +25,6 @@ import android.view.WindowManager
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.runtime.getValue
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.ContextCompat
@@ -747,7 +744,6 @@ class IslandOverlayController(private val context: Context) {
 
                 ExpressiveCutoutTheme {
                     val assistantShortcutEnabled by assistantShortcutState.collectAsStateWithLifecycle()
-                    Box(Modifier.fillMaxSize()) {
                     DynamicIsland(
                         event = event,
                         ringSettings = behaviour,
@@ -804,16 +800,6 @@ class IslandOverlayController(private val context: Context) {
                         onReplyActiveChange = ::onReplyActive,
                         onDismiss = ::onDismiss,
                     )
-                    if (replacementEnabled && orientation != Configuration.ORIENTATION_LANDSCAPE) {
-                        GalaxyStatusBar(
-                            state = statusState,
-                            showCellular = replacementCellular,
-                            showWifi = replacementWifi,
-                            showBattery = replacementBattery,
-                            showConnectivity = replacementConnectivity,
-                        )
-                    }
-                    }
                 }
             }
         }
