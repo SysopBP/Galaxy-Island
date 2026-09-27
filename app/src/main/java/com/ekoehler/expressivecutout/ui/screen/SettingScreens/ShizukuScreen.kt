@@ -84,6 +84,12 @@ internal fun ShizukuScreen(
     val hideSystemInfo by viewModel.hideSystemInfo.collectAsStateWithLifecycle()
     val hideClock by viewModel.hideClock.collectAsStateWithLifecycle()
     val silenceAlerts by viewModel.silenceSystemAlerts.collectAsStateWithLifecycle()
+    val replacementEnabled by viewModel.statusBarReplacementEnabled.collectAsStateWithLifecycle()
+    val replacementNotifications by viewModel.statusBarReplacementNotifications.collectAsStateWithLifecycle()
+    val replacementCellular by viewModel.statusBarReplacementCellular.collectAsStateWithLifecycle()
+    val replacementWifi by viewModel.statusBarReplacementWifi.collectAsStateWithLifecycle()
+    val replacementBattery by viewModel.statusBarReplacementBattery.collectAsStateWithLifecycle()
+    val replacementConnectivity by viewModel.statusBarReplacementConnectivity.collectAsStateWithLifecycle()
     val permissionDot by viewModel.permissionDotEnabled.collectAsStateWithLifecycle()
     val shizuku by ShizukuState.status.collectAsStateWithLifecycle()
 
@@ -122,6 +128,55 @@ internal fun ShizukuScreen(
         }
 
         StatusBarPreview(hideIcons = hideIcons, hideSystem = hideSystemInfo, hideClock = hideClock)
+        SettingsToggleCard(
+            shape = RoundedCornerShape(24.dp),
+            title = stringResource(R.string.status_bar_replacement_title),
+            description = stringResource(R.string.status_bar_replacement_desc),
+            checked = replacementEnabled,
+            onCheckedChange = viewModel::setStatusBarReplacementEnabled,
+            enabled = true,
+        )
+
+        AnimatedVisibility(visible = replacementEnabled) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                SettingsToggleCard(
+                    shape = groupedShape(isFirst = true, isLast = false),
+                    title = stringResource(R.string.status_bar_replacement_notifications_title),
+                    description = stringResource(R.string.status_bar_replacement_notifications_desc),
+                    checked = replacementNotifications,
+                    onCheckedChange = viewModel::setStatusBarReplacementNotifications,
+                )
+                SettingsToggleCard(
+                    shape = groupedShape(isFirst = false, isLast = false),
+                    title = stringResource(R.string.status_bar_replacement_cellular_title),
+                    description = stringResource(R.string.status_bar_replacement_cellular_desc),
+                    checked = replacementCellular,
+                    onCheckedChange = viewModel::setStatusBarReplacementCellular,
+                )
+                SettingsToggleCard(
+                    shape = groupedShape(isFirst = false, isLast = false),
+                    title = stringResource(R.string.status_bar_replacement_wifi_title),
+                    description = stringResource(R.string.status_bar_replacement_wifi_desc),
+                    checked = replacementWifi,
+                    onCheckedChange = viewModel::setStatusBarReplacementWifi,
+                )
+                SettingsToggleCard(
+                    shape = groupedShape(isFirst = false, isLast = false),
+                    title = stringResource(R.string.status_bar_replacement_battery_title),
+                    description = stringResource(R.string.status_bar_replacement_battery_desc),
+                    checked = replacementBattery,
+                    onCheckedChange = viewModel::setStatusBarReplacementBattery,
+                )
+                SettingsToggleCard(
+                    shape = groupedShape(isFirst = false, isLast = true),
+                    title = stringResource(R.string.status_bar_replacement_connectivity_title),
+                    description = stringResource(R.string.status_bar_replacement_connectivity_desc),
+                    checked = replacementConnectivity,
+                    onCheckedChange = viewModel::setStatusBarReplacementConnectivity,
+                )
+            }
+        }
+
 
         Text(
             text = stringResource(R.string.status_bar_hide_icons_note),
