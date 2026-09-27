@@ -62,6 +62,9 @@ dependencies {
     implementation(libs.shizuku.provider)
     implementation(libs.hiddenapibypass)
 
+    // Supplied by LSPosed at runtime; Stage 1 is read-only SystemUI diagnostics.
+    compileOnly("io.github.libxposed:api:102.0.0")
+
     testImplementation(libs.junit)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation("junit:junit:4.13.2")
