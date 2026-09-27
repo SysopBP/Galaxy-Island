@@ -831,6 +831,45 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         statusBarPreferences.setSilenceAlerts(silence)
     }
 
+    /** Galaxy Island's complete replacement status-bar mode and its icon groups. */
+    val statusBarReplacementEnabled = statusBarPreferences.replacementEnabled.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), false,
+    )
+    val statusBarReplacementNotifications = statusBarPreferences.replacementNotifications.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), true,
+    )
+    val statusBarReplacementCellular = statusBarPreferences.replacementCellular.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), true,
+    )
+    val statusBarReplacementWifi = statusBarPreferences.replacementWifi.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), true,
+    )
+    val statusBarReplacementBattery = statusBarPreferences.replacementBattery.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), true,
+    )
+    val statusBarReplacementConnectivity = statusBarPreferences.replacementConnectivity.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000), true,
+    )
+
+    fun setStatusBarReplacementEnabled(enabled: Boolean) = viewModelScope.launch {
+        statusBarPreferences.setReplacementEnabled(enabled)
+    }
+    fun setStatusBarReplacementNotifications(enabled: Boolean) = viewModelScope.launch {
+        statusBarPreferences.setReplacementNotifications(enabled)
+    }
+    fun setStatusBarReplacementCellular(enabled: Boolean) = viewModelScope.launch {
+        statusBarPreferences.setReplacementCellular(enabled)
+    }
+    fun setStatusBarReplacementWifi(enabled: Boolean) = viewModelScope.launch {
+        statusBarPreferences.setReplacementWifi(enabled)
+    }
+    fun setStatusBarReplacementBattery(enabled: Boolean) = viewModelScope.launch {
+        statusBarPreferences.setReplacementBattery(enabled)
+    }
+    fun setStatusBarReplacementConnectivity(enabled: Boolean) = viewModelScope.launch {
+        statusBarPreferences.setReplacementConnectivity(enabled)
+    }
+
     /**
      * Whether the user wants the island to mark live microphone, camera and location use. Saved even
      * while Shizuku is unreachable; `PermissionUsageMonitor` starts reading as soon as the bridge is
