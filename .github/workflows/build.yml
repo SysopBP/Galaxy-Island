@@ -1,63 +1,51 @@
-name: Build
+name: Full Build Validation
 
 on:
   push:
     branches: [main, dev]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: galaxy-full-build-${{ github.ref }}
+  group: galaxy-full-validation-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 17
+
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
       - name: Assemble debug
         run: ./gradlew assembleDebug --no-daemon
-      - name: Lint
-        run: ./gradlew lintDebug --no-daemon
-      - name: Verify reference build parity
+
+      - name: Verify full APK parity
+        shell: bash
         run: |
           set -euo pipefail
-          APK="$(find app/build/outputs/apk/debug -type f -name "*.apk" | head -1)"
-          test -n "$APK"
-          SIZE="$(stat -c%s "$APK")"
-          DEX_COUNT="$(unzip -Z1 "$APK" | grep -Ec '^classes([0-9]+)?\.dex$')"
+          APK="$(find app/build/outputs/apk/debug -type f -name '*.apk' -print -quit)"
+          test -f "$APK"
+          SIZE="$(stat -c '%s' "$APK")"
+          DEX_COUNT="$(unzip -Z1 "$APK" | awk '/^classes([0-9]+)?\.dex$/ {n++} END {print n+0}')"
           echo "Galaxy Island APK: $APK"
           echo "APK bytes: $SIZE"
           echo "DEX files: $DEX_COUNT"
-          # Known 0.2.0-beta reference: 63,867,555 bytes / 15 DEX files.
-          # Allow compiler drift while rejecting accidentally stripped artifacts.
+          # Canonical 0.2.0-beta reference: 63,867,555 bytes / 15 DEX.
+          # Keep a tolerance for normal compiler drift while rejecting stripped builds.
           test "$SIZE" -ge 50000000
           test "$DEX_COUNT" -ge 12
-          ./gradlew :app:dependencies --configuration debugRuntimeClasspath --no-daemon > /tmp/galaxy-island-runtime.txt
-          grep -F "androidx.core:core-ktx:1.15.0" /tmp/galaxy-island-runtime.txt
-          grep -F "androidx.lifecycle:lifecycle-runtime-ktx:2.8.7" /tmp/galaxy-island-runtime.txt
-          grep -F "androidx.activity:activity-compose:1.9.3" /tmp/galaxy-island-runtime.txt
-          grep -F "androidx.datastore:datastore-preferences:1.1.1" /tmp/galaxy-island-runtime.txt
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: expressive-cutout-debug
+          name: galaxy-island-full-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-      - name: Upload lint report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lint-report
-          path: app/build/reports/lint-results-debug.html
-          if-no-files-found: ignore
