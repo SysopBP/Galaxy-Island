@@ -1,5 +1,7 @@
 package com.ekoehler.expressivecutout.xposed
 
+import android.content.Intent
+import android.os.SystemClock
 import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
@@ -7,7 +9,26 @@ import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
 import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
 
 class GalaxyIslandXposedBridge : XposedModule() {
-    companion object { private const val TAG = "GalaxyIslandXposed"; private const val SYSTEM_UI = "com.android.systemui" }
+    companion object {
+        private const val TAG = "GalaxyIslandXposed"
+        private const val SYSTEM_UI = "com.android.systemui"
+        private const val APP_PACKAGE = "app.cutout.ringpreview"
+        private const val ACTION_SYSTEMUI_EVENT = "app.cutout.ringpreview.action.XPOSED_SYSTEMUI_EVENT"
+    }
+
+    private fun emitSystemUiEvent(event: String, owner: String, method: String, args: String? = null) {
+        runCatching {
+            val app = android.app.AndroidAppHelper.currentApplication() ?: return
+            val intent = Intent(ACTION_SYSTEMUI_EVENT)
+                .setPackage(APP_PACKAGE)
+                .putExtra("event", event)
+                .putExtra("owner", owner)
+                .putExtra("method", method)
+                .putExtra("elapsedRealtime", SystemClock.elapsedRealtime())
+            if (!args.isNullOrBlank()) intent.putExtra("args", args.take(2048))
+            app.sendBroadcast(intent)
+        }.onFailure { log(Log.WARN, TAG, "GALAXY_ISLAND_BRIDGE_EMIT_FAILED event=$event", it) }
+    }
     override fun onModuleLoaded(param: ModuleLoadedParam) { log(Log.INFO, TAG, "GALAXY_ISLAND_XPOSED_LOADED api=$apiVersion framework=$frameworkName") }
     override fun onPackageReady(param: PackageReadyParam) {
         if (param.packageName != SYSTEM_UI) return
@@ -52,6 +73,7 @@ class GalaxyIslandXposedBridge : XposedModule() {
                             }
                         }
                         log(Log.INFO, TAG, "GALAXY_ISLAND_SYSTEMUI_${event} target=${owner.name}#${method.name} args=[$args]")
+                        emitSystemUiEvent(event, owner.name, method.name, args)
                         chain.proceed()
                     }
                     installed++
@@ -81,6 +103,7 @@ class GalaxyIslandXposedBridge : XposedModule() {
                     method.isAccessible = true
                     hook(method).setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE).intercept { chain ->
                         log(Log.INFO, TAG, "GALAXY_ISLAND_SYSTEMUI_SCREEN target=${owner.name}#${method.name}")
+                        emitSystemUiEvent("SCREEN", owner.name, method.name)
                         chain.proceed()
                     }
                     installed++
