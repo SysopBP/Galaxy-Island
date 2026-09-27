@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 /** Brand seed palette used when dynamic colour is unavailable (Android 11 and below). */
 val SEED_PRIMARY = Color(0xFF3B82F6)
-val SEED_SECONDARY = Color(0xFF7C3AED)
+val SEED_SECONDARY = Color(0xFF608EC7)
 val SEED_TERTIARY = Color(0xFF14B8A6)
 
 /**

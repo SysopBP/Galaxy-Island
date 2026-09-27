@@ -7,6 +7,8 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
@@ -86,23 +88,39 @@ class GalaxyIslandXposedBridge : XposedModule() {
         val width = (126f * density).toInt()
         val height = (34f * density).toInt()
         val top = (2f * density).toInt()
-        val probe = View(host.context).apply {
+
+        // First real native renderer: still deliberately compact and non-interactive.
+        // It proves that Galaxy Island content, not merely a probe rectangle, can live
+        // inside SystemUI while the existing accessibility overlay remains the fallback.
+        val island = LinearLayout(host.context).apply {
             this.tag = tag
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
             isClickable = false
             isFocusable = false
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            setPadding((12f * density).toInt(), 0, (12f * density).toInt(), 0)
             background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 18f * density
                 setColor(Color.BLACK)
+                setStroke((1f * density).toInt().coerceAtLeast(1), Color.argb(72, 255, 255, 255))
             }
             elevation = 8f * density
+            addView(TextView(context).apply {
+                text = "Galaxy Island"
+                textSize = 11f
+                setTextColor(Color.WHITE)
+                gravity = Gravity.CENTER
+                includeFontPadding = false
+                alpha = 0.92f
+            }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f))
         }
         val lp = FrameLayout.LayoutParams(width, height, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply {
             topMargin = top
         }
-        host.addView(probe, lp)
-        log(Log.INFO, TAG, "GALAXY_ISLAND_NATIVE_HOST_MOUNTED host=${host.javaClass.name} size=${width}x${height}")
+        host.addView(island, lp)
+        log(Log.INFO, TAG, "GALAXY_ISLAND_NATIVE_RENDERER_MOUNTED host=${host.javaClass.name} size=${width}x${height} fallback=overlay")
     }
 
     private fun installStage2SystemUiDiagnostics(classLoader: ClassLoader) {

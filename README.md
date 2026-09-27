@@ -11,6 +11,20 @@
 <img width="1280" height="640" alt="Frame 25" src="https://github.com/user-attachments/assets/d801de28-eac6-4ffd-8474-55d9a8af4dc3" />
 
 
+## Current SystemUI integration preview
+
+The development line now includes the CI-validated LSPosed/SystemUI native host from Actions run 75. The original Galaxy Island overlay geometry remains available as the fallback path.
+
+The **0.2.1-systemui-preview** branch replaces the black host probe with the first compact native Galaxy Island renderer mounted directly in Samsung SystemUI. This stage is intentionally non-interactive: it validates native placement and SystemUI recreation safety before notification/media content is migrated into the host.
+
+Current priorities:
+- validate the native Island on One UI 9 without losing the overlay fallback;
+- migrate notification, media, charging and call presentation into the native host incrementally;
+- connect the existing Galaxy status/icon monitor to the SystemUI renderer;
+- finish the glass/transparency treatment and remove remaining legacy purple fallback styling;
+- preserve the full-feature Island codebase while the native path matures.
+
+
 ## Upstream project: Expressive Cutout
 
 **An offline dynamic island that follows Google's Material Expressive design.**
