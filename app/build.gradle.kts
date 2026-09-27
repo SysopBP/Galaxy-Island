@@ -13,8 +13,8 @@ android {
         applicationId = "app.cutout.ringpreview"
         minSdk = 29
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.2.0-beta"
+        versionCode = 15
+        versionName = "0.2.0-beta-build15-xposed"
     }
 
     buildTypes {
@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.shizuku.api)
     implementation(libs.shizuku.provider)
     implementation(libs.hiddenapibypass)
+    compileOnly(libs.xposed.api)
 
     testImplementation(libs.junit)
     debugImplementation(libs.androidx.compose.ui.tooling)
