@@ -2,7 +2,7 @@ name: Build Galaxy Island
 
 on:
   push:
-    branches: [main]
+    branches: [main, xposed/build15-systemui-foundation]
   workflow_dispatch:
 
 concurrency:
