@@ -49,3 +49,5 @@ jobs:
           name: galaxy-island-full-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+# Build trigger: full Galaxy Island validation
