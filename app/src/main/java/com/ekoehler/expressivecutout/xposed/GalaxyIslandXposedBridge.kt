@@ -1,6 +1,12 @@
 package com.ekoehler.expressivecutout.xposed
 
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.util.Log
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
@@ -28,9 +34,77 @@ class GalaxyIslandXposedBridge : XposedModule() {
     override fun onPackageReady(param: PackageReadyParam) {
         if (param.packageName != SYSTEM_UI) return
         log(Log.INFO, TAG, "GALAXY_ISLAND_SYSTEMUI_READY package=${param.packageName}")
+        installSystemUiIslandHost(param.classLoader)
         installScreenLifecycleDiagnostics(param.classLoader)
         installStage2SystemUiDiagnostics(param.classLoader)
     }
+    /**
+     * Experimental native host: mounts a small Galaxy Island probe directly into SystemUI's
+     * PhoneStatusBarView. The existing accessibility overlay remains untouched as a fallback.
+     * Keep this deliberately view-only until Samsung One UI 9 confirms the host survives
+     * SystemUI recreation without destabilising the process.
+     */
+    private fun installSystemUiIslandHost(classLoader: ClassLoader) {
+        val candidates = listOf(
+            "com.android.systemui.statusbar.phone.PhoneStatusBarView",
+            "com.android.systemui.statusbar.phone.fragment.CollapsedStatusBarFragment"
+        )
+        var installed = 0
+        candidates.forEach { className ->
+            val owner = runCatching { Class.forName(className, false, classLoader) }.getOrNull() ?: return@forEach
+            owner.declaredMethods.filter { it.name == "onFinishInflate" || it.name == "onViewCreated" }
+                .distinctBy { it.toGenericString() }
+                .forEach { method ->
+                    runCatching {
+                        method.isAccessible = true
+                        hook(method).setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE).intercept { chain ->
+                            val result = chain.proceed()
+                            runCatching {
+                                val host = when (val self = chain.thisObject) {
+                                    is ViewGroup -> self
+                                    else -> chain.args.firstOrNull { it is ViewGroup } as? ViewGroup
+                                }
+                                if (host != null) mountNativeProbe(host)
+                            }.onFailure { log(Log.WARN, TAG, "GALAXY_ISLAND_NATIVE_HOST_MOUNT_FAILED target=${owner.name}#${method.name}", it) }
+                            result
+                        }
+                        installed++
+                        log(Log.INFO, TAG, "GALAXY_ISLAND_NATIVE_HOST_HOOK_INSTALLED target=${owner.name}#${method.name}")
+                    }.onFailure { log(Log.WARN, TAG, "GALAXY_ISLAND_NATIVE_HOST_HOOK_FAILED target=${owner.name}#${method.name}", it) }
+                }
+        }
+        log(Log.INFO, TAG, "GALAXY_ISLAND_NATIVE_HOST_READY hooks=$installed")
+    }
+
+    private fun mountNativeProbe(host: ViewGroup) {
+        val tag = "galaxy_island_native_host_probe"
+        if (host.findViewWithTag<View>(tag) != null) {
+            log(Log.INFO, TAG, "GALAXY_ISLAND_NATIVE_HOST_ALREADY_MOUNTED host=${host.javaClass.name}")
+            return
+        }
+        val density = host.resources.displayMetrics.density
+        val width = (126f * density).toInt()
+        val height = (34f * density).toInt()
+        val top = (2f * density).toInt()
+        val probe = View(host.context).apply {
+            this.tag = tag
+            isClickable = false
+            isFocusable = false
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 18f * density
+                setColor(Color.BLACK)
+            }
+            elevation = 8f * density
+        }
+        val lp = FrameLayout.LayoutParams(width, height, Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply {
+            topMargin = top
+        }
+        host.addView(probe, lp)
+        log(Log.INFO, TAG, "GALAXY_ISLAND_NATIVE_HOST_MOUNTED host=${host.javaClass.name} size=${width}x${height}")
+    }
+
     private fun installStage2SystemUiDiagnostics(classLoader: ClassLoader) {
         installNamedDiagnostics(classLoader, "NOTIFICATION", listOf(
             "com.android.systemui.statusbar.notification.collection.NotifCollection" to listOf("onNotificationPosted", "onNotificationRemoved", "onNotificationRankingUpdate"),
