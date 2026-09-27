@@ -2,7 +2,7 @@ name: Full Build Validation
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, dev, experimental-systemui-island-host]
   workflow_dispatch:
 
 concurrency:
