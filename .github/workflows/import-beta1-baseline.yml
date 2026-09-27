@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  GH_TOKEN: ${{ secrets.D2_SOURCE_TOKEN || github.token }}
+
 jobs:
   baseline:
     runs-on: ubuntu-latest
