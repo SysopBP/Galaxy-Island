@@ -25,6 +25,9 @@ import android.view.WindowManager
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.content.ContextCompat
@@ -79,6 +82,8 @@ import com.ekoehler.expressivecutout.data.TimerTilePreferences
 import com.ekoehler.expressivecutout.data.TimerTileSettings
 import com.ekoehler.expressivecutout.service.CutoutNotificationListenerService
 import com.ekoehler.expressivecutout.system.PermissionUsageMonitor
+import com.ekoehler.expressivecutout.system.GalaxyStatusMonitor
+import com.ekoehler.expressivecutout.data.StatusBarPreferences
 import com.ekoehler.expressivecutout.ui.theme.ExpressiveCutoutTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -131,6 +136,13 @@ class IslandOverlayController(private val context: Context) {
     private val assistantTilePreferences = AssistantTilePreferences(context)
     private val appPreferences = AppPreferences(context)
     private val permissionDotPreferences = PermissionDotPreferences(context)
+    private val statusBarPreferences = StatusBarPreferences(context)
+    private val galaxyStatusMonitor = GalaxyStatusMonitor(context)
+    private val statusReplacementEnabled = MutableStateFlow(false)
+    private val statusReplacementCellular = MutableStateFlow(true)
+    private val statusReplacementWifi = MutableStateFlow(true)
+    private val statusReplacementBattery = MutableStateFlow(true)
+    private val statusReplacementConnectivity = MutableStateFlow(true)
     private val density = context.resources.displayMetrics.density
 
     /**
@@ -396,6 +408,8 @@ class IslandOverlayController(private val context: Context) {
         observeSignals()
         observeVisibility()
         observeMirroredKey()
+        observeStatusReplacement()
+        galaxyStatusMonitor.start()
         scope.launch {
             CutoutNotificationListenerService.bound.collect { bound ->
                 if (!bound) {
@@ -436,6 +450,7 @@ class IslandOverlayController(private val context: Context) {
      */
     fun stop() {
         d2MonitorJob?.cancel()
+        galaxyStatusMonitor.stop()
         context.contentResolver.unregisterContentObserver(d2Observer)
         satelliteDismissJob?.cancel()
         // The island is going away with a pill still up, so nothing is left to mirror the
@@ -448,6 +463,14 @@ class IslandOverlayController(private val context: Context) {
         removeOverlay()
         lifecycleOwner.onDestroy()
         scope.cancel()
+    }
+
+    private fun observeStatusReplacement() {
+        scope.launch { statusBarPreferences.replacementEnabled.collect { statusReplacementEnabled.value = it } }
+        scope.launch { statusBarPreferences.replacementCellular.collect { statusReplacementCellular.value = it } }
+        scope.launch { statusBarPreferences.replacementWifi.collect { statusReplacementWifi.value = it } }
+        scope.launch { statusBarPreferences.replacementBattery.collect { statusReplacementBattery.value = it } }
+        scope.launch { statusBarPreferences.replacementConnectivity.collect { statusReplacementConnectivity.value = it } }
     }
 
     /**
@@ -708,6 +731,12 @@ class IslandOverlayController(private val context: Context) {
                 val permissionDotVertical by permissionDotVerticalState.collectAsStateWithLifecycle()
                 // The dot settings screen shows every enabled dot here, switch on or not.
                 val permissionDotPreview by PermissionDotPreviewBus.active.collectAsStateWithLifecycle()
+                val statusState by galaxyStatusMonitor.state.collectAsStateWithLifecycle()
+                val replacementEnabled by statusReplacementEnabled.collectAsStateWithLifecycle()
+                val replacementCellular by statusReplacementCellular.collectAsStateWithLifecycle()
+                val replacementWifi by statusReplacementWifi.collectAsStateWithLifecycle()
+                val replacementBattery by statusReplacementBattery.collectAsStateWithLifecycle()
+                val replacementConnectivity by statusReplacementConnectivity.collectAsStateWithLifecycle()
                 val isNoExpandLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE &&
                     (behaviour.horizontalCutoutMode == HorizontalCutoutMode.NORMAL_ONLY ||
                      behaviour.horizontalCutoutMode == HorizontalCutoutMode.STICK_TO_CAMERA)
@@ -718,6 +747,7 @@ class IslandOverlayController(private val context: Context) {
 
                 ExpressiveCutoutTheme {
                     val assistantShortcutEnabled by assistantShortcutState.collectAsStateWithLifecycle()
+                    Box(Modifier.fillMaxSize()) {
                     DynamicIsland(
                         event = event,
                         ringSettings = behaviour,
@@ -774,6 +804,16 @@ class IslandOverlayController(private val context: Context) {
                         onReplyActiveChange = ::onReplyActive,
                         onDismiss = ::onDismiss,
                     )
+                    if (replacementEnabled && orientation != Configuration.ORIENTATION_LANDSCAPE) {
+                        GalaxyStatusBar(
+                            state = statusState,
+                            showCellular = replacementCellular,
+                            showWifi = replacementWifi,
+                            showBattery = replacementBattery,
+                            showConnectivity = replacementConnectivity,
+                        )
+                    }
+                    }
                 }
             }
         }
