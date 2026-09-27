@@ -47,7 +47,7 @@ internal object AppPalette {
     /** Blend limits preserve foreground contrast even for black or white custom seeds. */
     private const val OPAQUE = 0xFF000000L
     private const val PRIMARY_BLEND = .60f
-    private const val SURFACE_BLEND = .06f
-    private const val CONTAINER_BLEND = .22f
-    private const val AMOLED_SURFACE_BLEND = .12f
+    private const val SURFACE_BLEND = .035f
+    private const val CONTAINER_BLEND = .14f
+    private const val AMOLED_SURFACE_BLEND = .075f
 }
