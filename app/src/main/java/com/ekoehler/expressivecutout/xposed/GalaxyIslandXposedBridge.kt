@@ -18,7 +18,7 @@ class GalaxyIslandXposedBridge : XposedModule() {
 
     private fun emitSystemUiEvent(event: String, owner: String, method: String, args: String? = null) {
         runCatching {
-            val app = android.app.AndroidAppHelper.currentApplication() ?: return
+            val app = runCatching { android.app.ActivityThread.currentApplication() }.getOrNull() ?: return
             val intent = Intent(ACTION_SYSTEMUI_EVENT)
                 .setPackage(APP_PACKAGE)
                 .putExtra("event", event)
