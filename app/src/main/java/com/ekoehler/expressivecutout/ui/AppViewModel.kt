@@ -756,6 +756,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         behaviourPreferences.setSatellitePosition(position)
     }
 
+    fun setGlassEnabled(enabled: Boolean) = viewModelScope.launch {
+        appearancePreferences.setGlassEnabled(enabled)
+    }
+
     fun setShadowEnabled(enabled: Boolean) = viewModelScope.launch {
         appearancePreferences.setShadowEnabled(enabled)
     }
