@@ -21,6 +21,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -110,6 +111,16 @@ internal fun BackgroundScreen(
             onSelect = { tabIndex = it },
             modifier = Modifier.fillMaxWidth(),
         )
+
+        if (!expandedTab) {
+            SettingsToggleCard(
+                shape = RoundedCornerShape(size = 24.dp),
+                title = "Transparent pill",
+                description = "Let the wallpaper show through the collapsed Galaxy Island pill.",
+                checked = appearance.transparentPill,
+                onCheckedChange = viewModel::setTransparentPill,
+            )
+        }
 
         if (expandedTab) {
             AdjustableSlider(
