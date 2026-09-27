@@ -1233,24 +1233,22 @@ internal fun IslandSurface(
     }
 
     Surface(
-        modifier = modifier.background(currentBaseColor, shape),
+        modifier = modifier,
         shape = shape,
-        color = currentBaseColor,
+        // Keep the host transparent in glass mode so the user's fill opacity is real.
+        color = if (appearance.glassEnabled) Color.Transparent else currentBaseColor,
         contentColor = contentColor,
         shadowElevation = if (appearance.shadowEnabled) 6.dp else 0.dp,
         tonalElevation = 0.dp,
         border = border,
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) {
-            Box(modifier = Modifier.fillMaxSize().then(if (appearance.glassEnabled) Modifier else Modifier.background(currentBaseColor))) {
-                // One UI 9 inspired glass treatment: keep the user's selected fill, then layer
-                // restrained translucent highlights/shading over it. This preserves OLED black
-                // and dynamic/app colours while giving both the floating and expanded island a
-                // more dimensional glass surface.
+            Box(modifier = Modifier.fillMaxSize().clip(shape)) {
+                // The selected fills become the glass tint and retain their configured alpha.
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer { alpha = if (appearance.glassEnabled) 0.72f else 1f }
+                        .graphicsLayer { alpha = if (appearance.glassEnabled) 0.78f else 1f }
                         .background(normalBrush),
                 )
                 if (progress > 0f) {
@@ -1261,17 +1259,19 @@ internal fun IslandSurface(
                             .background(expandedBrush),
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(GalaxyGlassShade),
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(GalaxyGlassHighlight),
-                )
+                if (appearance.glassEnabled) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(GalaxyGlassShade),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(GalaxyGlassHighlight),
+                    )
+                }
                 content()
             }
         }
