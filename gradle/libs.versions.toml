@@ -10,6 +10,7 @@ savedstate = "1.2.1"
 lottie = "6.6.2"
 shizuku = "13.1.5"
 hiddenapibypass = "6.1"
+xposedApi = "82"
 junit = "4.13.2"
 
 [libraries]
@@ -35,6 +36,7 @@ lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", versio
 shizuku-api = { group = "dev.rikka.shizuku", name = "api", version.ref = "shizuku" }
 shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version.ref = "shizuku" }
 hiddenapibypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version.ref = "hiddenapibypass" }
+xposed-api = { group = "de.robv.android.xposed", name = "api", version.ref = "xposedApi" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
