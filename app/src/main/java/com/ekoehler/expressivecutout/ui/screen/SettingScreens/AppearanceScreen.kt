@@ -116,6 +116,14 @@ internal fun AppearanceScreen(
     ) {
         SettingsToggleCard(
             shape = RoundedCornerShape(24.dp),
+            title = stringResource(R.string.appearance_glass_title),
+            description = stringResource(R.string.appearance_glass_desc),
+            checked = appearance.glassEnabled,
+            onCheckedChange = viewModel::setGlassEnabled,
+        )
+
+        SettingsToggleCard(
+            shape = RoundedCornerShape(24.dp),
             title = stringResource(R.string.appearance_shadow_title),
             description = stringResource(R.string.appearance_shadow_desc),
             checked = appearance.shadowEnabled,
