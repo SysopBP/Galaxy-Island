@@ -33,6 +33,43 @@ jobs:
       - name: Lint
         run: ./gradlew lintDebug --no-daemon
 
+      - name: Verify reference build parity
+        run: |
+          set -euo pipefail
+          APK="$(find app/build/outputs/apk/debug -type f -name "*.apk" | head -1)"
+          test -n "$APK"
+          SIZE="$(stat -c%s "$APK")"
+          DEX_COUNT="$(unzip -Z1 "$APK" | grep -Ec '^classes([0-9]+)?\.dex      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: expressive-cutout-debug
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
+)"
+
+          echo "Galaxy Island APK: $APK"
+          echo "APK bytes: $SIZE"
+          echo "DEX files: $DEX_COUNT"
+
+          # Known 0.2.0-beta reference: 63,867,555 bytes / 15 DEX files.
+          # Allow normal compiler drift while rejecting accidentally stripped artifacts.
+          test "$SIZE" -ge 50000000
+          test "$DEX_COUNT" -ge 12
+
+          ./gradlew :app:dependencies --configuration debugRuntimeClasspath --no-daemon > /tmp/galaxy-island-runtime.txt
+          grep -F "androidx.core:core-ktx:1.15.0" /tmp/galaxy-island-runtime.txt
+          grep -F "androidx.lifecycle:lifecycle-runtime-ktx:2.8.7" /tmp/galaxy-island-runtime.txt
+          grep -F "androidx.activity:activity-compose:1.9.3" /tmp/galaxy-island-runtime.txt
+          grep -F "androidx.datastore:datastore-preferences:1.1.1" /tmp/galaxy-island-runtime.txt
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
