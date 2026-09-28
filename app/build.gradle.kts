@@ -42,6 +42,8 @@ android {
 }
 
 dependencies {
+    // Compile-time only; LSPosed supplies libxposed at runtime.
+    compileOnly("io.github.libxposed:api:102.0.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
