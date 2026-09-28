@@ -1,5 +1,20 @@
 [
   {
+    "version": "0.2.1-beta-preview.1",
+    "description": "Galaxy Island native SystemUI preview",
+    "features": [
+      "Experimental native Galaxy Island host inside SystemUI with the existing overlay retained as a fallback",
+      "LSPosed/libxposed API 102 SystemUI integration and native-host diagnostics",
+      "SystemUI event diagnostics for notifications, media, charging and calls",
+      "SystemUI lifecycle validation designed to avoid system_server hooks",
+      "Galaxy Island branding and current standalone app architecture retained"
+    ],
+    "bugfixes": [
+      "Native host mount is deduplicated when SystemUI recreates its status-bar view",
+      "SystemUI hooks use protective exception handling so failed experimental targets can fall back safely"
+    ]
+  },
+  {
     "version": "0.2.0-beta",
     "description": "Shizuku, adaptive colours and permission dots",
     "features": [
