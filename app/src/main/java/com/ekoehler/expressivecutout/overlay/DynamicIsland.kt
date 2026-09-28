@@ -1097,12 +1097,13 @@ fun DynamicIsland(
 
         // Draw the notification ring at its configured camera diameter. The old clamp to the
         // collapsed pill height could bury the stroke under the opaque island on hole-punch devices.
-        val ringEvent = event?.takeIf { it.notificationKey != null }
-            ?: satellite?.takeIf { it.notificationKey != null }
+        // The ring belongs to the active island alert, not only NotificationListener events.
+        // System/preview events often have no notificationKey, which previously suppressed it entirely.
+        val ringEvent = event ?: satellite
         if (ringAllowed && ringSettings.cameraRingEnabled && ringEvent != null) {
-            val ringDiameter = ringSettings.cameraRingDiameter
+            val ringDiameter = ringSettings.cameraRingDiameter.coerceAtMost(collapsed.heightDp)
             CameraNotificationRing(
-                settings = ringSettings,
+                settings = ringSettings.copy(cameraRingDiameter = ringDiameter),
                 accent = ringEvent.accent,
                 modifier = Modifier.align(Alignment.TopCenter)
                     .offset(
