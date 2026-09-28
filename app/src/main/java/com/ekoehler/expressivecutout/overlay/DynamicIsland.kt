@@ -184,10 +184,10 @@ import kotlin.math.roundToInt
  */
 private val PILL_TEXT_COLOR = Color(0xFFF5F5F5)
 private val PILL_TEXT_COLOR_DARK = Color(0xFF0A0A0A)
-private val GalaxyGlassHighlight = Color.White.copy(alpha = 0.24f)
-private val GalaxyGlassInnerHighlight = Color.White.copy(alpha = 0.08f)
-private val GalaxyGlassEdge = Color.White.copy(alpha = 0.18f)
-private val GalaxyGlassShade = Color.Black.copy(alpha = 0.08f)
+private val GalaxyGlassHighlight = Color.White.copy(alpha = 0.32f)
+private val GalaxyGlassInnerHighlight = Color.White.copy(alpha = 0.12f)
+private val GalaxyGlassEdge = Color.White.copy(alpha = 0.26f)
+private val GalaxyGlassShade = Color.Black.copy(alpha = 0.14f)
 
 /** Fallback fill for a button asked to be [MusicButtonStyle.filled] before the user picks a colour. */
 private val MUSIC_BUTTON_FILLED_DEFAULT = Color(0xFFE0E0E0)
@@ -1226,7 +1226,9 @@ internal fun IslandSurface(
 
     val autoContentColor = if (repColor.luminance() > 0.5f) PILL_TEXT_COLOR_DARK else PILL_TEXT_COLOR
     val contentColor = appearance.textColor?.resolve(appColor, adaptiveColor) ?: autoContentColor
-    val border = if (appearance.strokeEnabled) {
+    val border = if (appearance.glassEnabled) {
+        BorderStroke(1.dp, GalaxyGlassEdge)
+    } else if (appearance.strokeEnabled) {
         val baseColor = appearance.strokeColor.resolve(appColor, adaptiveColor)
         val strokeFinalColor = baseColor.copy(alpha = (baseColor.alpha * appearance.strokeOpacity).coerceIn(0f, 1f))
         BorderStroke(appearance.strokeWidthDp.dp, strokeFinalColor)
@@ -1239,7 +1241,7 @@ internal fun IslandSurface(
         shape = shape,
         color = currentBaseColor,
         contentColor = contentColor,
-        shadowElevation = if (appearance.shadowEnabled) 6.dp else 0.dp,
+        shadowElevation = if (appearance.glassEnabled) 12.dp else if (appearance.shadowEnabled) 6.dp else 0.dp,
         tonalElevation = 0.dp,
         border = border,
     ) {
@@ -1260,7 +1262,7 @@ internal fun IslandSurface(
                             .background(expandedBrush),
                     )
                 }
-                val glassOverlayAlpha = if (progress > 0f) appearance.expandedCardOpacity else if (appearance.transparentPill) 0f else 1f
+                val glassOverlayAlpha = if (!appearance.glassEnabled) 0f else if (progress > 0f) appearance.expandedCardOpacity else if (appearance.transparentPill) 0f else 1f
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
