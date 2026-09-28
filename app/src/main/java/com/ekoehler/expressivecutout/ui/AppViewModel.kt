@@ -764,6 +764,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         appearancePreferences.setExpandedCardOpacity(opacity)
     }
 
+    fun setGlassEnabled(enabled: Boolean) = viewModelScope.launch {
+        appearancePreferences.setGlassEnabled(enabled)
+    }
+
     fun setShadowEnabled(enabled: Boolean) = viewModelScope.launch {
         appearancePreferences.setShadowEnabled(enabled)
     }
