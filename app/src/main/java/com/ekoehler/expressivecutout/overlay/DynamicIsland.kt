@@ -140,6 +140,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.ekoehler.expressivecutout.R
+import com.ekoehler.expressivecutout.ai.GalaxyAiBus
+import com.ekoehler.expressivecutout.ai.GalaxyAiTask
 import com.ekoehler.expressivecutout.core.MediaArtBus
 import com.ekoehler.expressivecutout.core.MediaProgress
 import com.ekoehler.expressivecutout.core.NowPlaying
@@ -456,6 +458,11 @@ fun DynamicIsland(
     onActivate: () -> Unit,
     onAction: (IslandAction) -> Unit,
     onReply: (IslandAction, String) -> Unit,
+    aiEnabled: Boolean = false,
+    aiSummariesEnabled: Boolean = false,
+    aiRepliesEnabled: Boolean = false,
+    onAiSummarize: (IslandEvent) -> Unit = {},
+    onAiReply: (IslandEvent) -> Unit = {},
     onReplyActiveChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -472,6 +479,11 @@ fun DynamicIsland(
     var centerInteraction by remember { mutableStateOf(0) }
     var replyingTo by remember(shownEvent?.id) { mutableStateOf<IslandAction?>(null) }
     val replying = replyingTo != null
+    val aiState by GalaxyAiBus.state.collectAsStateWithLifecycle()
+    val aiForShownEvent = aiState.takeIf { it.notificationKey != null && it.notificationKey == shownEvent?.notificationKey }
+    val aiEligible = aiEnabled && shownEvent?.notificationKey != null &&
+        shownEvent.media == null && shownEvent.call == null && shownEvent.timer == null && shownEvent.assistant == null
+    val aiReplyAction = shownEvent?.actions?.firstOrNull { it.reply != null }
     var sentReply by remember(shownEvent?.id) { mutableStateOf<Pair<IslandAction, String>?>(null) }
     val confirmingSent = sentReply != null
     val isCall = shownEvent?.call != null
@@ -2203,16 +2215,70 @@ private fun ExpandedContent(
 
                 showActions && event.actions.isNotEmpty() -> {
                     val chipFill = appearance.actionButtonColor?.resolve() ?: event.accent
-                    ActionChipRow(
-                        actions = event.actions.take(3),
-                        style = appearance.actionButtonStyle,
-                        fill = chipFill,
-                        heightDp = appearance.actionButtonHeightDp,
-                        alignment = appearance.actionButtonAlignment,
-                        onChip = { action ->
-                            if (action.reply != null) onStartReply(action) else onAction(action)
-                        },
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ActionChipRow(
+                            actions = event.actions.take(3),
+                            style = appearance.actionButtonStyle,
+                            fill = chipFill,
+                            heightDp = appearance.actionButtonHeightDp,
+                            alignment = appearance.actionButtonAlignment,
+                            onChip = { action ->
+                                if (action.reply != null) onStartReply(action) else onAction(action)
+                            },
+                        )
+                        if (aiEligible && (aiSummariesEnabled || (aiRepliesEnabled && aiReplyAction != null))) {
+                            val aiActions = buildList {
+                                if (aiSummariesEnabled) add(IslandAction(label = "✨ Summarize"))
+                                if (aiRepliesEnabled && aiReplyAction != null) add(IslandAction(label = "✨ AI Reply"))
+                            }
+                            ActionChipRow(
+                                actions = aiActions,
+                                style = appearance.actionButtonStyle,
+                                fill = event.accent,
+                                heightDp = appearance.actionButtonHeightDp,
+                                alignment = appearance.actionButtonAlignment,
+                                onChip = { action ->
+                                    when (action.label) {
+                                        "✨ Summarize" -> onAiSummarize(event)
+                                        "✨ AI Reply" -> onAiReply(event)
+                                    }
+                                },
+                            )
+                        }
+                        aiForShownEvent?.let { state ->
+                            val message = when {
+                                state.loading -> "Galaxy AI is thinking…"
+                                state.error != null -> state.error
+                                state.result != null -> state.result
+                                else -> null
+                            }
+                            if (!message.isNullOrBlank()) {
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.72f),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+                                        Text(
+                                            text = if (state.task == GalaxyAiTask.SUGGEST_REPLY) "AI reply draft" else "AI summary",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = LocalContentColor.current.copy(alpha = 0.68f),
+                                        )
+                                        Text(message, fontSize = 13.sp, modifier = Modifier.padding(top = 3.dp))
+                                        if (state.task == GalaxyAiTask.SUGGEST_REPLY && state.result != null && aiReplyAction != null) {
+                                            Text(
+                                                "Tap Reply above to edit or send this draft.",
+                                                fontSize = 11.sp,
+                                                color = LocalContentColor.current.copy(alpha = 0.6f),
+                                                modifier = Modifier.padding(top = 4.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
