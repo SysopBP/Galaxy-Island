@@ -191,6 +191,9 @@ private val GalaxyGlassHighlight = Color.White.copy(alpha = 0.32f)
 private val GalaxyGlassInnerHighlight = Color.White.copy(alpha = 0.12f)
 private val GalaxyGlassEdge = Color.White.copy(alpha = 0.26f)
 private val GalaxyGlassShade = Color.Black.copy(alpha = 0.14f)
+private val GalaxyGlassPopoutTop = Color.White.copy(alpha = 0.16f)
+private val GalaxyGlassPopoutGlow = Color.White.copy(alpha = 0.07f)
+private val GalaxyGlassPopoutShade = Color.Black.copy(alpha = 0.20f)
 
 /** Fallback fill for a button asked to be [MusicButtonStyle.filled] before the user picks a colour. */
 private val MUSIC_BUTTON_FILLED_DEFAULT = Color(0xFFE0E0E0)
@@ -1259,7 +1262,7 @@ internal fun IslandSurface(
         shape = shape,
         color = currentBaseColor,
         contentColor = contentColor,
-        shadowElevation = if (appearance.glassEnabled) 12.dp else if (appearance.shadowEnabled) 6.dp else 0.dp,
+        shadowElevation = if (appearance.glassEnabled) (12.dp + (progress * 6f).dp) else if (appearance.shadowEnabled) 6.dp else 0.dp,
         tonalElevation = 0.dp,
         border = border,
     ) {
@@ -1306,6 +1309,39 @@ internal fun IslandSurface(
                         .graphicsLayer { alpha = glassOverlayAlpha }
                         .background(GalaxyGlassHighlight),
                 )
+                // Expanded pop-outs get an extra glass stack so they read as the pill unfolding
+                // into a larger pane rather than a flat notification card. These layers fade in
+                // with expansion and stay deliberately subtle over AMOLED/dynamic backgrounds.
+                if (appearance.glassEnabled && progress > 0f) {
+                    val popoutAlpha = progress * appearance.expandedCardOpacity
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(18.dp)
+                            .graphicsLayer { alpha = popoutAlpha }
+                            .background(GalaxyGlassPopoutTop),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { alpha = popoutAlpha * 0.72f }
+                            .background(GalaxyGlassPopoutGlow),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .align(Alignment.BottomCenter)
+                            .graphicsLayer { alpha = popoutAlpha * 0.80f }
+                            .background(GalaxyGlassPopoutShade),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { alpha = popoutAlpha * 0.85f }
+                            .border(1.dp, GalaxyGlassEdge.copy(alpha = 0.34f), shape),
+                    )
+                }
                 content()
             }
         }
