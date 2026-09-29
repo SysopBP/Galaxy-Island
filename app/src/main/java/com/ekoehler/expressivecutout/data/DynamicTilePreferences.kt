@@ -16,14 +16,13 @@ import org.json.JSONObject
 private val Context.dynamicTileDataStore: DataStore<Preferences> by preferencesDataStore(name = "dynamic_tile_prefs")
 
 /**
- * Persists whether each dynamic tile is allowed to appear on the cutout. Absent means enabled,
- * so tiles show by default and only explicit opt-outs are stored — mirroring [EventPreferences]
- * but kept separate because tiles are a distinct concept from system events.
+ * Persists per-tile visibility. Persistent device status tiles start off so an upgrade does not
+ * unexpectedly fill the island; existing notification and media tiles keep their defaults.
  */
 class DynamicTilePreferences(private val context: Context) : JsonSerializable {
 
     val enabled: Flow<Map<DynamicTile, Boolean>> = context.dynamicTileDataStore.data.map { prefs ->
-        DynamicTile.entries.associateWith { tile -> prefs[tile.key] ?: true }
+        DynamicTile.entries.associateWith { tile -> prefs[tile.key] ?: tile.enabledByDefault }
     }
 
     suspend fun setEnabled(tile: DynamicTile, enabled: Boolean) = context.dynamicTileDataStore.edit {
@@ -44,13 +43,13 @@ class DynamicTilePreferences(private val context: Context) : JsonSerializable {
 
     /**
      * Applies { enabled: { TILE_NAME: bool, ... } } exported by [toJson]. Every known tile is set
-     * from the document, defaulting an absent entry to enabled (the store's own default), in one edit.
+     * from the document, defaulting an absent entry to the tile's own default, in one edit.
      */
     override suspend fun fromJson(json: String) {
         val enabledObj = JSONObject(json).optJSONObject("enabled") ?: return
         context.dynamicTileDataStore.edit { prefs ->
             DynamicTile.entries.forEach { tile ->
-                prefs[tile.key] = enabledObj.optBoolean(tile.name, true)
+                prefs[tile.key] = enabledObj.optBoolean(tile.name, tile.enabledByDefault)
             }
         }
     }

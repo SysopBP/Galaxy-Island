@@ -244,6 +244,11 @@ class IslandOverlayController(private val context: Context) {
     private var eventDynamicColorRole: DynamicRole = DynamicRole.PRIMARY
     private var eventDynamicColorOpacity: Float = 1f
     private var tileEnabled: Map<DynamicTile, Boolean> = emptyMap()
+
+    /** Latest enabled device tiles, refreshed by a coroutine owned by this controller. */
+    private val deviceTiles = linkedMapOf<DynamicTile, IslandEvent>()
+    private val deviceTileSnapshot = com.ekoehler.expressivecutout.events.DeviceTileSnapshot(context)
+    private val dismissedDeviceTiles = mutableSetOf<DynamicTile>()
     /** Packages the user muted on the Apps screen: nothing they post reaches the cutout. */
     private var disabledApps: Set<String> = emptySet()
     /** Packages allowed on the cutout but never allowed to expand it on their own. */
@@ -382,6 +387,7 @@ class IslandOverlayController(private val context: Context) {
         observeEventDynamicColorRole()
         observeEventDynamicColorOpacity()
         observeTilePreferences()
+        observeDeviceTiles()
         observeAppPreferences()
         observePermissionDotSettings()
         observeMusicSettings()
@@ -811,19 +817,20 @@ class IslandOverlayController(private val context: Context) {
                 behaviourLoaded = true
                 observeD2(it.d2Enabled)
             }
-            if (!it.persistentNotifications || !it.cutoutEnabled) pendingNotifications.clear()
+            if (!it.cutoutEnabled) pendingNotifications.clear()
+            else if (!it.persistentNotifications) pendingNotifications.removeWhere { event -> event.liveNotificationTile == null }
             if (previous.persistentNotifications != it.persistentNotifications ||
                 previous.persistentTimeoutSeconds != it.persistentTimeoutSeconds) {
                 val seconds = it.persistentTimeoutSeconds
                 if (it.persistentNotifications) {
                     listOfNotNull(currentEvent.value, satelliteEvent.value).forEach { event ->
-                        event.notificationKey?.let { key ->
+                        event.notificationKey?.takeIf { event.liveNotificationTile == null }?.let { key ->
                             pendingNotifications.put(key, event.copy(initiallyExpanded = false),
                                 if (seconds == 0) null else android.os.SystemClock.elapsedRealtime() + seconds * 1_000L)
                         }
                     }
                 }
-                satelliteEvent.value?.takeIf { event -> event.notificationKey != null }?.let { event ->
+                satelliteEvent.value?.takeIf { event -> event.notificationKey != null && event.liveNotificationTile == null }?.let { event ->
                     val delaySeconds = if (it.persistentNotifications) seconds else it.normalDurationSeconds
                     parkInSatellite(event, if (delaySeconds == 0) null else System.currentTimeMillis() + delaySeconds * 1_000L)
                 }
@@ -887,7 +894,60 @@ class IslandOverlayController(private val context: Context) {
 
     /** Mirrors which dynamic tiles are enabled into [tileEnabled]. */
     private fun observeTilePreferences() = scope.launch {
-        dynamicTilePreferences.enabled.collect { tileEnabled = it }
+        dynamicTilePreferences.enabled.collect { enabled ->
+            val previousEnabled = tileEnabled
+            tileEnabled = enabled
+            dismissedDeviceTiles.removeAll { enabled[it] != true || previousEnabled[it] != true }
+            deviceTiles.keys.retainAll(enabled.filterValues { it }.keys)
+            fun disabled(event: IslandEvent?): Boolean =
+                event?.liveDeviceTile?.let { enabled[it] != true } == true ||
+                    event?.liveNotificationTile?.let { enabled[it] == false } == true ||
+                    (event?.progressData != null && enabled[DynamicTile.DOWNLOADS] == false)
+            pendingNotifications.removeWhere { disabled(it) }
+            if (disabled(savedEventBeforeHide)) savedEventBeforeHide = null
+            if (disabled(satelliteEvent.value)) clearSatellite()
+            if (disabled(currentEvent.value)) dismissIsland()
+        }
+    }
+
+    /** Refreshes enabled status tiles without interrupting notifications, calls or media. */
+    private fun observeDeviceTiles() = scope.launch {
+        while (true) {
+            val snapshots = deviceTileSnapshot.read(tileEnabled)
+            deviceTiles.keys.retainAll(snapshots.keys)
+            dismissedDeviceTiles.retainAll(snapshots.keys)
+            snapshots.forEach { (tile, payload) ->
+                val previous = deviceTiles[tile]
+                val resolved = resolver.resolve(
+                    signal = CutoutSignal.System(payload), customIcons = customIcons,
+                    musicSettings = musicSettings, phoneSettings = phoneSettings, timerSettings = timerSettings,
+                    animatedIconEnabled = mapOf(payload.type to false),
+                ).copy(liveDeviceTile = tile, icon = IslandIcon.Vector(tile.defaultIcon))
+                deviceTiles[tile] = if (previous == null) resolved else
+                    resolved.copy(id = previous.id, alertStartedAtMs = previous.alertStartedAtMs)
+            }
+            fun refreshed(event: IslandEvent?): IslandEvent? = event?.liveDeviceTile?.let { deviceTiles[it] } ?: event
+            if (currentEvent.value?.liveDeviceTile?.let { it !in deviceTiles } == true) dismissIsland()
+            else currentEvent.value = refreshed(currentEvent.value)
+            if (satelliteEvent.value?.liveDeviceTile?.let { it !in deviceTiles } == true) clearSatellite()
+            else satelliteEvent.value = refreshed(satelliteEvent.value)
+            if (savedEventBeforeHide?.liveDeviceTile?.let { it !in deviceTiles } == true) savedEventBeforeHide = null
+            else savedEventBeforeHide = refreshed(savedEventBeforeHide)
+            if (!overlayHidden && behaviourState.value.cutoutEnabled && !previewPinned && currentEvent.value == null) {
+                currentEvent.value = devicePillToReturnTo()
+                currentSystemEventType = null
+                forcedExpanded.value = null
+                expanded = false
+                scheduleDismiss()
+            }
+            if (!overlayHidden) syncWindowSize()
+            delay(DEVICE_TILE_REFRESH_MS)
+        }
+    }
+
+    /** Selects an enabled device tile that the user has not dismissed this session. */
+    private fun devicePillToReturnTo(): IslandEvent? = deviceTiles.values.lastOrNull {
+        it.liveDeviceTile !in dismissedDeviceTiles
     }
 
     /**
@@ -1919,6 +1979,10 @@ class IslandOverlayController(private val context: Context) {
             if (signal is CutoutSignal.Timer && tileEnabled[DynamicTile.TIMER] == false) return@collect
             // Skip assistant responses when the assistant tile is turned off.
             if (signal is CutoutSignal.Assistant && tileEnabled[DynamicTile.ASSISTANT] == false) return@collect
+            if (signal is CutoutSignal.Notification) {
+                if (signal.progressData != null && tileEnabled[DynamicTile.DOWNLOADS] == false) return@collect
+                if (signal.liveNotificationTile?.let { tileEnabled[it] == false } == true) return@collect
+            }
             // Skip anything posted by an app the user muted on the Apps screen.
             if (signal.sourcePackage() in disabledApps) return@collect
             // Skip silent notifications when configured to ignore them.
@@ -1971,7 +2035,11 @@ class IslandOverlayController(private val context: Context) {
                 animatedIconLoop = eventAnimatedIconLoops,
                 eventColorOverrides = eventColors,
                 preferDynamicIconColor = appearanceState.value.preferDynamicIconColor,
-            ).copy(initiallyExpanded = autoExpand, normalOnly = normalOnly)
+            ).copy(initiallyExpanded = autoExpand, normalOnly = normalOnly).let { event ->
+                val previous = listOfNotNull(currentEvent.value, satelliteEvent.value)
+                    .firstOrNull { it.notificationKey != null && it.notificationKey == event.notificationKey }
+                if (previous == null) event else event.copy(id = previous.id, alertStartedAtMs = previous.alertStartedAtMs)
+            }
 
             if (overlayHidden) {
                 if (behaviourState.value.cutoutEnabled) {
@@ -2012,12 +2080,27 @@ class IslandOverlayController(private val context: Context) {
                 return@collect
             }
 
-            if (signal is CutoutSignal.Notification && behaviourState.value.persistentNotifications) {
+            if (signal is CutoutSignal.Notification && signal.key != null) {
+                pendingNotifications.remove(signal.key)
+            }
+            if (signal is CutoutSignal.Notification &&
+                (behaviourState.value.persistentNotifications || signal.liveNotificationTile != null)) {
                 signal.key?.let { key ->
-                    val seconds = behaviourState.value.persistentTimeoutSeconds
+                    val seconds = if (signal.liveNotificationTile != null) 0 else behaviourState.value.persistentTimeoutSeconds
                     pendingNotifications.put(key, resolvedEvent.copy(initiallyExpanded = false),
                         if (seconds == 0) null else android.os.SystemClock.elapsedRealtime() + seconds * 1_000L)
                 }
+            }
+            val satellite = satelliteEvent.value
+            if (signal is CutoutSignal.Notification && signal.key != null && satellite != null && satellite.notificationKey == signal.key) {
+                val updated = resolvedEvent.copy(id = satellite.id)
+                val seconds = if (behaviourState.value.persistentNotifications)
+                    behaviourState.value.persistentTimeoutSeconds else behaviourState.value.normalDurationSeconds
+                val deadline = if (updated.liveNotificationTile != null || seconds == 0) null else
+                    System.currentTimeMillis() + seconds * 1_000L
+                parkInSatellite(updated, deadline)
+                syncWindowSize()
+                return@collect
             }
             val existing = currentEvent.value
             if (signal is CutoutSignal.Notification && signal.key != null &&
@@ -2367,6 +2450,7 @@ class IslandOverlayController(private val context: Context) {
      * interruption clears (which read as laggy). Re-checks playback after the delay in case it ended.
      */
     private fun dismissIsland() {
+        currentEvent.value?.liveDeviceTile?.let(dismissedDeviceTiles::add)
         currentEvent.value?.notificationKey?.let(pendingNotifications::remove)
         dismissJob?.cancel()
         restoreSlotsOnCollapse = false
@@ -2400,7 +2484,7 @@ class IslandOverlayController(private val context: Context) {
      */
     private fun livePillToReturnTo(): IslandEvent? =
         callPillToReturnTo() ?: musicPillToReturnTo() ?: timerPillToReturnTo() ?:
-            pendingNotifications.latest(android.os.SystemClock.elapsedRealtime()) ?: lockPillToReturnTo()
+            pendingNotifications.latest(android.os.SystemClock.elapsedRealtime()) ?: lockPillToReturnTo() ?: devicePillToReturnTo()
 
     /** True while a live pill occupies either slot (so we never "return" on top of one). */
     private fun showingLiveTile(): Boolean =
@@ -2502,7 +2586,7 @@ class IslandOverlayController(private val context: Context) {
         dismissJob?.cancel()
         currentDeadlineMs = null
         // Never time out a live cutout while it's active — it stays until playback / the call stops.
-        if (isPinnedLiveTile()) return
+        if (isPinnedLiveTile() || currentEvent.value?.liveNotificationTile != null || currentEvent.value?.liveDeviceTile != null) return
         if (isPersistentNotification() && behaviourState.value.persistentTimeoutSeconds == 0) return
         // A system event with its own duration override wins; everything else uses the global normal.
         val seconds = if (isPersistentNotification()) behaviourState.value.persistentTimeoutSeconds
@@ -2659,6 +2743,8 @@ class IslandOverlayController(private val context: Context) {
     }
 
     internal companion object {
+        /** Device status refresh interval while the overlay service is running. */
+        private const val DEVICE_TILE_REFRESH_MS = 5_000L
         fun shouldCollapseOnOutsideTouch(isExpanded: Boolean, previewPinned: Boolean): Boolean =
             isExpanded && !previewPinned
         const val TAG = "IslandOverlay"

@@ -182,6 +182,9 @@ import kotlin.math.roundToInt
  * Text colours for a dark fill; on a light fill we swap in a dark text colour (see
  * contentColorFor).
  */
+/** Maximum flash duration so persistent alerts cannot leave a permanent camera light. */
+private const val CAMERA_RING_ALERT_DURATION_MS = 8_000L
+
 private val PILL_TEXT_COLOR = Color(0xFFF5F5F5)
 private val PILL_TEXT_COLOR_DARK = Color(0xFF0A0A0A)
 private val GalaxyGlassHighlight = Color.White.copy(alpha = 0.32f)
@@ -1095,12 +1098,20 @@ fun DynamicIsland(
             }
         }
 
-        // Draw the notification ring at its configured camera diameter. The old clamp to the
-        // collapsed pill height could bury the stroke under the opaque island on hole-punch devices.
-        // The ring belongs to the active island alert, not only NotificationListener events.
-        // System/preview events often have no notificationKey, which previously suppressed it entirely.
-        val ringEvent = event ?: satellite
-        if (ringAllowed && ringSettings.cameraRingEnabled && ringEvent != null) {
+        val ringEvent = event?.takeIf { it.shouldLightCameraRing(ringSettings) }
+            ?: satellite?.takeIf { it.shouldLightCameraRing(ringSettings) }
+        val ringRemainingMs = ringEvent?.let {
+            CAMERA_RING_ALERT_DURATION_MS - ((System.nanoTime() / 1_000_000L) - it.alertStartedAtMs)
+        } ?: 0L
+        var ringExpired by remember(ringEvent?.id) { mutableStateOf(ringRemainingMs <= 0L) }
+        LaunchedEffect(ringEvent?.id, isExpanded) {
+            if (isExpanded) ringExpired = true
+            if (ringEvent != null) {
+                kotlinx.coroutines.delay(ringRemainingMs.coerceAtLeast(0L))
+                ringExpired = true
+            }
+        }
+        if (ringAllowed && !isExpanded && !ringExpired && ringEvent != null) {
             val ringDiameter = ringSettings.cameraRingDiameter.coerceAtMost(collapsed.heightDp)
             CameraNotificationRing(
                 settings = ringSettings.copy(cameraRingDiameter = ringDiameter),

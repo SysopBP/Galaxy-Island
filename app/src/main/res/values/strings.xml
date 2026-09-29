@@ -613,4 +613,24 @@
     <string name="copy_accent_island">Copy current accent to island</string>
     <string name="copy_accent_explanation">Applies a dark translucent fill, accent border and white text to the island. More fill, opacity and shape options are in Appearance.</string>
     <string name="reset_app_theme">Reset app theme</string>
+    <string name="tile_downloads">Downloads &amp; progress</string>
+    <string name="tile_downloads_desc">Live progress from download, upload and transfer notifications. Ends when completed or removed.</string>
+    <string name="tile_navigation">Navigation</string>
+    <string name="tile_navigation_desc">Ongoing navigation notification titles and actions. Requires the navigation app to publish a navigation notification.</string>
+    <string name="tile_live_source_note">Uses notification access and respects your Apps filters and Do Not Disturb settings. Tap the expanded tile to open its app.</string>
+    <string name="tile_battery">Battery &amp; charging</string>
+    <string name="tile_battery_desc">Live battery percentage and charging state.</string>
+    <string name="tile_network">Network &amp; VPN</string>
+    <string name="tile_network_desc">Current Wi-Fi, mobile data or VPN connection status.</string>
+    <string name="tile_bluetooth_audio">Bluetooth audio</string>
+    <string name="tile_bluetooth_audio_desc">Shows while a Bluetooth audio output is connected.</string>
+    <string name="tile_device_note">Refreshes every five seconds. Opens the relevant system settings when tapped. Device status tiles do not trigger the camera ring.</string>
+    <string name="tile_battery_charging">Charging</string>
+    <string name="tile_battery_discharging">On battery</string>
+    <string name="tile_network_wifi">Wi-Fi</string>
+    <string name="tile_network_mobile">Mobile data</string>
+    <string name="tile_network_vpn">VPN active</string>
+    <string name="tile_network_other">Network connected</string>
+    <string name="tile_network_offline">Offline</string>
+    <string name="tile_audio_connected">Bluetooth audio connected</string>
 </resources>
