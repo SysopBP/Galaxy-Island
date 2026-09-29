@@ -53,6 +53,38 @@ internal fun AssistantScreen(
         SettingsToggleCard(shape = RoundedCornerShape(16.dp), title = "Automatically expand responses",
             description = "Off keeps replies in the small island until you tap. Expanded replies scroll within the chosen height.",
             checked = settings.autoExpand, onCheckedChange = viewModel::setAssistantAutoExpand)
+        Text("Galaxy AI Preview", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
+        SettingsToggleCard(
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp, bottomStart = 4.dp, bottomEnd = 4.dp),
+            title = "Enable Galaxy AI",
+            description = "Experimental. Off by default. Enabling this permits configured AI providers to process notification text only when you request an AI action.",
+            checked = ai.enabled,
+            onCheckedChange = viewModel::setAiEnabled,
+        )
+        AnimatedVisibility(visible = ai.enabled) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                SettingsToggleCard(
+                    shape = RoundedCornerShape(4.dp),
+                    title = "Summarize notifications",
+                    description = "Adds an AI summary action to supported expanded notifications.",
+                    checked = ai.notificationSummaries,
+                    onCheckedChange = viewModel::setAiNotificationSummaries,
+                )
+                SettingsToggleCard(
+                    shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp, topStart = 4.dp, topEnd = 4.dp),
+                    title = "Suggested replies",
+                    description = "Allows AI to draft a reply. Galaxy Island will never send it without your action.",
+                    checked = ai.suggestedReplies,
+                    onCheckedChange = viewModel::setAiSuggestedReplies,
+                )
+            }
+        }
+        Text(
+            "No model or API credential is bundled in this preview. AI actions remain unavailable until a provider is configured.",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+
         Text("Assistant shortcuts", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
         androidx.compose.material3.Button(onClick = { chooseApp = true }, modifier = Modifier.padding(horizontal = 16.dp)) {
             Text("Choose assistant app")
