@@ -18,6 +18,8 @@ import com.ekoehler.expressivecutout.data.AnimationBounce
 import com.ekoehler.expressivecutout.data.AnimationSpeed
 import com.ekoehler.expressivecutout.data.AnimationStyle
 import com.ekoehler.expressivecutout.data.AppPreferences
+import com.ekoehler.expressivecutout.data.AiPreferences
+import com.ekoehler.expressivecutout.data.AiSettings
 import com.ekoehler.expressivecutout.data.AppearancePreferences
 import com.ekoehler.expressivecutout.data.AppearanceSettings
 import com.ekoehler.expressivecutout.data.ReplyInputStyle
@@ -86,6 +88,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val timerTilePreferences = TimerTilePreferences(application)
     private val assistantTilePreferences = AssistantTilePreferences(application)
     private val appPreferences = AppPreferences(application)
+    private val aiPreferences = AiPreferences(application)
     private val recentColorPreferences = RecentColorPreferences(application)
     private val statusBarPreferences = StatusBarPreferences(application)
     private val permissionDotPreferences = PermissionDotPreferences(application)
@@ -199,6 +202,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = TimerTileSettings(),
         )
+
+    val aiSettings: StateFlow<AiSettings> = aiPreferences.settings.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = AiSettings(),
+    )
 
     val assistantTile: StateFlow<AssistantTileSettings> =
         assistantTilePreferences.settings.stateIn(
@@ -471,6 +480,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun setTimerAddButtonColor(color: CutoutColor) = viewModelScope.launch {
         timerTilePreferences.setAddButtonColor(color)
     }
+
+    fun setAiEnabled(value: Boolean) = viewModelScope.launch { aiPreferences.setEnabled(value) }
+    fun setAiNotificationSummaries(value: Boolean) = viewModelScope.launch { aiPreferences.setNotificationSummaries(value) }
+    fun setAiSuggestedReplies(value: Boolean) = viewModelScope.launch { aiPreferences.setSuggestedReplies(value) }
 
     fun setAssistantDisplayAnswerInCutout(enabled: Boolean) = viewModelScope.launch {
         assistantTilePreferences.setDisplayAnswerInCutout(enabled)
