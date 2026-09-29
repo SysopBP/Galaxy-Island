@@ -478,6 +478,7 @@ fun DynamicIsland(
     var tapExpanded by remember(shownEvent?.id, forcedExpanded) { mutableStateOf(initialExpandedState) }
     var centerInteraction by remember { mutableStateOf(0) }
     var replyingTo by remember(shownEvent?.id) { mutableStateOf<IslandAction?>(null) }
+    var aiReplyPrefill by remember(shownEvent?.id) { mutableStateOf<String?>(null) }
     val replying = replyingTo != null
     val aiState by GalaxyAiBus.state.collectAsStateWithLifecycle()
     val aiForShownEvent = aiState.takeIf { it.notificationKey != null && it.notificationKey == shownEvent?.notificationKey }
@@ -2203,6 +2204,7 @@ private fun ExpandedContent(
 
                 replyingTo != null -> ReplyRow(
                     hint = replyingTo.reply?.hint,
+                    initialText = aiReplyPrefill.orEmpty(),
                     accent = event.accent,
                     sendColor = sendColor,
                     cancelColor = appearance.cancelButtonColor?.resolve(),
@@ -2267,8 +2269,12 @@ private fun ExpandedContent(
                                         )
                                         Text(message, fontSize = 13.sp, modifier = Modifier.padding(top = 3.dp))
                                         if (state.task == GalaxyAiTask.SUGGEST_REPLY && state.result != null && aiReplyAction != null) {
+                                            LaunchedEffect(state.result, aiReplyAction) {
+                                                aiReplyPrefill = state.result
+                                                replyingTo = aiReplyAction
+                                            }
                                             Text(
-                                                "Tap Reply above to edit or send this draft.",
+                                                "Draft loaded into Reply — edit it or press Send.",
                                                 fontSize = 11.sp,
                                                 color = LocalContentColor.current.copy(alpha = 0.6f),
                                                 modifier = Modifier.padding(top = 4.dp),
@@ -2520,6 +2526,7 @@ private fun ReplySentRow(tint: Color, heightDp: Int, alignment: SentAlignment) {
 @Composable
 private fun ReplyRow(
     hint: String?,
+    initialText: String = "",
     accent: Color,
     sendColor: Color,
     cancelColor: Color?,
@@ -2529,7 +2536,7 @@ private fun ReplyRow(
     onSend: (String) -> Unit,
     onCancel: () -> Unit,
 ) {
-    var text by remember { mutableStateOf("") }
+    var text by remember(initialText) { mutableStateOf(initialText) }
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
     val send = { if (text.isNotBlank()) onSend(text.trim()) }
