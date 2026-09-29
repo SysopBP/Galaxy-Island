@@ -1107,14 +1107,16 @@ fun DynamicIsland(
             CAMERA_RING_ALERT_DURATION_MS - ((System.nanoTime() / 1_000_000L) - it.alertStartedAtMs)
         } ?: 0L
         var ringExpired by remember(ringEvent?.id) { mutableStateOf(ringRemainingMs <= 0L) }
-        LaunchedEffect(ringEvent?.id, isExpanded) {
-            if (isExpanded) ringExpired = true
+        // The camera ring is an alert independent of the pill's expanded/collapsed state.
+        // Normal notifications commonly auto-expand, so tying ring lifetime to isExpanded
+        // made calls (which stay collapsed) appear to be the only working ring trigger.
+        LaunchedEffect(ringEvent?.id) {
             if (ringEvent != null) {
                 kotlinx.coroutines.delay(ringRemainingMs.coerceAtLeast(0L))
                 ringExpired = true
             }
         }
-        if (ringAllowed && !isExpanded && !ringExpired && ringEvent != null) {
+        if (ringAllowed && !ringExpired && ringEvent != null) {
             val ringDiameter = ringSettings.cameraRingDiameter.coerceAtMost(collapsed.heightDp)
             CameraNotificationRing(
                 settings = ringSettings.copy(cameraRingDiameter = ringDiameter),
