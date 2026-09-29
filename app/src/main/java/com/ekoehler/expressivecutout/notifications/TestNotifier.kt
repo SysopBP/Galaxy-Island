@@ -17,6 +17,7 @@ import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import com.ekoehler.expressivecutout.R
 import com.ekoehler.expressivecutout.core.CutoutSignal
+import com.ekoehler.expressivecutout.core.DynamicTile
 import com.ekoehler.expressivecutout.core.IslandEventBus
 import com.ekoehler.expressivecutout.core.SystemEventPayload
 import com.ekoehler.expressivecutout.core.SystemEventType
@@ -57,6 +58,10 @@ object TestNotifier {
     private const val PROGRESS_STEP = 5
     private const val PROGRESS_SWEEP_MS = 5_000L
     private const val PROGRESS_KEY = "test-progress"
+    private const val ACTIONS_KEY = "test-actions"
+    private const val PLAIN_KEY = "test-plain"
+    private const val MULTILINE_KEY = "test-multiline"
+    private const val SECOND_KEY = "test-second"
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var progressJob: Job? = null
@@ -120,6 +125,7 @@ object TestNotifier {
                 title = context.getString(R.string.test_notification_title),
                 text = context.getString(R.string.test_notification_text),
                 appName = appName,
+                key = ACTIONS_KEY,
                 postTimeMs = postTimeMs,
                 actions = listOf(
                     CutoutSignal.Notification.Action(
@@ -207,6 +213,7 @@ object TestNotifier {
                 text = text,
                 appName = appName,
                 postTimeMs = postTimeMs,
+                key = MULTILINE_KEY,
                 actions = listOf(
                     CutoutSignal.Notification.Action(
                         title = context.getString(R.string.test_notification_action_reply),
@@ -273,6 +280,7 @@ object TestNotifier {
                 text = text,
                 appName = appName,
                 postTimeMs = postTimeMs,
+                key = PLAIN_KEY,
                 smallIcon = Icon.createWithResource(context, R.drawable.ic_stat_island),
             ),
         )
@@ -329,6 +337,7 @@ object TestNotifier {
                 text = text,
                 appName = appName,
                 postTimeMs = postTimeMs,
+                key = SECOND_KEY,
                 smallIcon = Icon.createWithResource(context, R.drawable.ic_stat_island_split),
             ),
         )
@@ -396,6 +405,7 @@ object TestNotifier {
                         key = PROGRESS_KEY,
                         contentIntent = contentIntent,
                         smallIcon = Icon.createWithResource(appContext, R.drawable.ic_stat_island),
+                        liveNotificationTile = if (isDone) null else DynamicTile.DOWNLOADS,
                         progressData = ProgressData(
                             max = PROGRESS_MAX,
                             current = current,
