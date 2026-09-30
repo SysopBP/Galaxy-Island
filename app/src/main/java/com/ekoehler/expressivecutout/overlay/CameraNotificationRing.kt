@@ -7,7 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.ekoehler.expressivecutout.data.BehaviourSettings
 
 /** Draws a camera-centered alert light, including a dark frosted track and rotating silver sheen. */
@@ -48,13 +49,26 @@ internal fun CameraNotificationRing(settings: BehaviourSettings, accent: Color, 
         11 -> Color(0xFF848F9E)
         else -> accent
     }
-    Canvas(modifier.offset(x = settings.cameraRingOffsetX.dp, y = settings.cameraRingOffsetY.dp).size(settings.cameraRingDiameter.dp)) {
-        val width = settings.cameraRingThickness.dp.toPx()
+    Canvas(
+        modifier
+            .offset(x = settings.cameraRingOffsetX.dp, y = settings.cameraRingOffsetY.dp)
+            .requiredSize(settings.cameraRingDiameter.coerceAtLeast(12).dp)
+            .zIndex(100f)
+    ) {
+        val width = settings.cameraRingThickness.coerceAtLeast(2).dp.toPx()
         val radius = ((size.minDimension - width) / 2f).coerceAtLeast(0f)
         val pulse = if (settings.cameraRingMode == 1) 0.3f + 0.7f *
             ((kotlin.math.sin(phase * 2f * Math.PI).toFloat() + 1f) / 2f) else 1f
         val brightness = settings.cameraRingBrightness / 100f
         val ink = color.copy(alpha = brightness * pulse)
+        // Always leave a faint high-contrast edge. Event accents can legitimately resolve to
+        // near-black; without this edge the ring was technically drawing over the AMOLED pill
+        // but looked absent around the camera hole.
+        drawCircle(
+            Color.White.copy(alpha = 0.16f * brightness * pulse),
+            radius = (radius + width * 0.55f).coerceAtMost(size.minDimension / 2f),
+            style = Stroke((0.8.dp).toPx()),
+        )
         if (settings.cameraRingMode == 3) {
             val sheen = if (settings.cameraRingColor == 11) Color(0xFFDBE3EE) else color
             drawCircle(Color(0xFF14181E).copy(alpha = brightness * 0.9f), radius, style = Stroke(width))
