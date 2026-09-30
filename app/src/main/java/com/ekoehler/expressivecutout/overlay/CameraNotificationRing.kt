@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -47,7 +48,7 @@ internal fun CameraNotificationRing(settings: BehaviourSettings, accent: Color, 
         11 -> Color(0xFF848F9E)
         else -> accent
     }
-    Canvas(modifier.size(settings.cameraRingDiameter.dp)) {
+    Canvas(modifier.offset(x = settings.cameraRingOffsetX.dp, y = settings.cameraRingOffsetY.dp).size(settings.cameraRingDiameter.dp)) {
         val width = settings.cameraRingThickness.dp.toPx()
         val radius = ((size.minDimension - width) / 2f).coerceAtLeast(0f)
         val pulse = if (settings.cameraRingMode == 1) 0.3f + 0.7f *
