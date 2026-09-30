@@ -1,7 +1,12 @@
 package com.ekoehler.expressivecutout
 
 import android.app.Application
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import com.ekoehler.expressivecutout.system.PermissionUsageMonitor
+import com.ekoehler.expressivecutout.core.PrivilegedBridge
 import com.ekoehler.expressivecutout.system.ShizukuState
 import com.ekoehler.expressivecutout.system.StatusBarIconController
 import kotlinx.coroutines.CoroutineScope
@@ -15,6 +20,15 @@ import org.lsposed.hiddenapibypass.HiddenApiBypass
  * status-bar flags and re-reads permission usage whenever Shizuku reconnects.
  */
 class ExpressiveCutoutApp : Application() {
+
+    private val systemUiBridgeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != ACTION_SYSTEMUI_BRIDGE_STATE) return
+            if (!intent.getBooleanExtra("active", false)) return
+            val heartbeat = intent.getLongExtra("heartbeat_elapsed", android.os.SystemClock.elapsedRealtime())
+            PrivilegedBridge.noteSystemUiHeartbeat(heartbeat)
+        }
+    }
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -30,5 +44,14 @@ class ExpressiveCutoutApp : Application() {
         ShizukuState.start(this)
         StatusBarIconController.start(this, appScope)
         PermissionUsageMonitor.start(this, appScope)
+        registerReceiver(
+            systemUiBridgeReceiver,
+            IntentFilter(ACTION_SYSTEMUI_BRIDGE_STATE),
+            Context.RECEIVER_EXPORTED,
+        )
+    }
+
+    companion object {
+        private const val ACTION_SYSTEMUI_BRIDGE_STATE = "app.cutout.ringpreview.SYSTEMUI_BRIDGE_STATE"
     }
 }
