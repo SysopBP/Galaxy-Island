@@ -1116,9 +1116,12 @@ fun DynamicIsland(
             }
         }
 
-        val ringEvent = event?.takeIf { it.notificationKey != null }
-            ?: satellite?.takeIf { it.notificationKey != null }
-        if (ringAllowed && ringSettings.cameraRingEnabled && ringEvent != null) {
+        // Keep the camera ring visible for any active alert source selected by the ring policy.
+        // Calls/timers/progress can now participate instead of limiting the effect to notifications.
+        // The controller/D2 visibility gate still owns whether this overlay may be shown at all.
+        val ringEvent = event?.takeIf { it.shouldLightCameraRing(ringSettings) }
+            ?: satellite?.takeIf { it.shouldLightCameraRing(ringSettings) }
+        if (ringAllowed && ringEvent != null) {
             CameraNotificationRing(
                 settings = ringSettings.copy(cameraRingDiameter = ringSettings.cameraRingDiameter.coerceAtMost(collapsed.heightDp)), accent = ringEvent.accent,
                 modifier = Modifier.align(Alignment.TopCenter)
