@@ -175,6 +175,21 @@ internal fun BehaviourScreen(
             onValueChange = { viewModel.setCameraRingDiameter(it.roundToInt()) }, onCommit = {},
         )
         BehaviourSliderRow(
+            shape = groupedShape(true, true), label = "Camera ring X position",
+            valueText = "${behaviour.cameraRingOffsetX} dp", value = behaviour.cameraRingOffsetX.toFloat(),
+            valueRange = -40f..40f, step = 1f,
+            onValueChange = { viewModel.setCameraRingOffsetX(it.roundToInt()) }, onCommit = {},
+        )
+        BehaviourSliderRow(
+            shape = groupedShape(true, true), label = "Camera ring Y position",
+            valueText = "${behaviour.cameraRingOffsetY} dp", value = behaviour.cameraRingOffsetY.toFloat(),
+            valueRange = -40f..40f, step = 1f,
+            onValueChange = { viewModel.setCameraRingOffsetY(it.roundToInt()) }, onCommit = {},
+        )
+        androidx.compose.material3.TextButton(onClick = viewModel::resetCameraRingPosition) {
+            Text("Reset camera ring position")
+        }
+        BehaviourSliderRow(
             shape = groupedShape(true, true), label = "Ring thickness",
             valueText = "${behaviour.cameraRingThickness} dp", value = behaviour.cameraRingThickness.toFloat(),
             valueRange = 1f..6f, step = 1f,
