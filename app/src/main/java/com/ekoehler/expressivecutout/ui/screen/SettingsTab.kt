@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.ColorLens
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.material.icons.rounded.Timer
@@ -77,6 +78,7 @@ fun SettingsTab(
     selectedEvent: SystemEventType?,
     onOpenSizePosition: () -> Unit,
     onOpenDynamicTiles: () -> Unit,
+    onOpenGalaxyAi: () -> Unit,
     onOpenTile: (DynamicTile) -> Unit,
     onOpenApps: () -> Unit,
     onOpenBehaviour: () -> Unit,
@@ -142,6 +144,7 @@ fun SettingsTab(
                     onCutoutEnabledChange = viewModel::setCutoutEnabled,
                     onOpenSizePosition = onOpenSizePosition,
                     onOpenDynamicTiles = onOpenDynamicTiles,
+                    onOpenGalaxyAi = onOpenGalaxyAi,
                     onOpenApps = onOpenApps,
                     onOpenBehaviour = onOpenBehaviour,
                     onOpenAnimation = onOpenAnimation,
@@ -153,6 +156,7 @@ fun SettingsTab(
 
             SettingsRoute.SizePosition -> SizePositionScreen(viewModel, contentPadding)
             SettingsRoute.DynamicTiles -> DynamicTilesScreen(viewModel, contentPadding, onOpenTile)
+            SettingsRoute.GalaxyAi -> AssistantScreen(viewModel, contentPadding)
             SettingsRoute.Apps -> AppsScreen(viewModel, contentPadding)
             SettingsRoute.DynamicTileDetail ->
                 selectedTile?.let { TileSettingsScreen(it, viewModel, contentPadding) }
@@ -174,7 +178,7 @@ fun SettingsTab(
 
 /** The screens reachable from the Settings tab. Hoisted to MainScreen so the bottom bar can
  *  switch to a back pill on the detail screens. */
-enum class SettingsRoute { List, SizePosition, DynamicTiles, DynamicTileDetail, Apps, Behaviour, ShowsWhenEmpty, Animation, Appearance, Background, ActionButtons, Shizuku, PermissionDot, EventIcons, EventDetail }
+enum class SettingsRoute { List, SizePosition, DynamicTiles, GalaxyAi, DynamicTileDetail, Apps, Behaviour, ShowsWhenEmpty, Animation, Appearance, Background, ActionButtons, Shizuku, PermissionDot, EventIcons, EventDetail }
 
 /**
  * The screen that back navigation returns to. Most detail screens go straight back to the list,
@@ -207,6 +211,7 @@ private fun SettingsList(
     onCutoutEnabledChange: (Boolean) -> Unit,
     onOpenSizePosition: () -> Unit,
     onOpenDynamicTiles: () -> Unit,
+    onOpenGalaxyAi: () -> Unit,
     onOpenApps: () -> Unit,
     onOpenBehaviour: () -> Unit,
     onOpenAnimation: () -> Unit,
@@ -334,6 +339,12 @@ private fun SettingsList(
                 title = stringResource(R.string.dynamic_tiles_title),
                 subtitle = stringResource(R.string.settings_dynamic_tiles_subtitle),
                 onClick = onOpenDynamicTiles,
+            )
+            SettingsListItem(
+                icon = Icons.Rounded.AutoAwesome,
+                title = "Galaxy AI",
+                subtitle = "Assistant, AI responses, shortcuts and AI island controls",
+                onClick = onOpenGalaxyAi,
             )
             SettingsListItem(
                 icon = Icons.Rounded.Notifications,
