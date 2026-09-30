@@ -1044,6 +1044,16 @@ fun DynamicIsland(
                                         progressData = e.progressData,
                                         onAction = onAction,
                                         onStartReply = { replyingTo = it },
+                                        aiEnabled = aiEnabled,
+                                        aiSummariesEnabled = aiSummariesEnabled,
+                                        aiRepliesEnabled = aiRepliesEnabled,
+                                        aiReplyPrefill = aiReplyPrefill,
+                                        onAiReplyPrefill = { draft, action ->
+                                            aiReplyPrefill = draft
+                                            replyingTo = action
+                                        },
+                                        onAiSummarize = onAiSummarize,
+                                        onAiReply = onAiReply,
                                         onCancelReply = { replyingTo = null },
                                         onSendReply = { text ->
                                             replyingTo?.let { action ->
@@ -2031,6 +2041,13 @@ private fun ExpandedContent(
     progressData: ProgressData? = null,
     onAction: (IslandAction) -> Unit,
     onStartReply: (IslandAction) -> Unit,
+    aiEnabled: Boolean = false,
+    aiSummariesEnabled: Boolean = false,
+    aiRepliesEnabled: Boolean = false,
+    aiReplyPrefill: String? = null,
+    onAiReplyPrefill: (String, IslandAction) -> Unit = { _, _ -> },
+    onAiSummarize: (IslandEvent) -> Unit = {},
+    onAiReply: (IslandEvent) -> Unit = {},
     onCancelReply: () -> Unit,
     onSendReply: (String) -> Unit,
     onDismiss: () -> Unit = {},
@@ -2270,8 +2287,7 @@ private fun ExpandedContent(
                                         Text(message, fontSize = 13.sp, modifier = Modifier.padding(top = 3.dp))
                                         if (state.task == GalaxyAiTask.SUGGEST_REPLY && state.result != null && aiReplyAction != null) {
                                             LaunchedEffect(state.result, aiReplyAction) {
-                                                aiReplyPrefill = state.result
-                                                replyingTo = aiReplyAction
+                                                onAiReplyPrefill(state.result, aiReplyAction)
                                             }
                                             Text(
                                                 "Draft loaded into Reply — edit it or press Send.",
