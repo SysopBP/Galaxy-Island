@@ -838,6 +838,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         appearancePreferences.setGlassEnabled(enabled)
     }
 
+    fun setGlassStyle(style: com.ekoehler.expressivecutout.data.GlassStyle) = viewModelScope.launch {
+        appearancePreferences.setGlassStyle(style)
+    }
+
     fun setShadowEnabled(enabled: Boolean) = viewModelScope.launch {
         appearancePreferences.setShadowEnabled(enabled)
     }
