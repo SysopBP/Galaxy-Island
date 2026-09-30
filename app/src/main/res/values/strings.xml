@@ -608,6 +608,7 @@
     <string name="test_progress_complete_title">Download complete</string>
     <string name="test_progress_complete_text">document_preview.pdf</string>
     <string name="theme_amoled">AMOLED</string>
+    <string name="theme_glass_amoled">Glass AMOLED</string>
     <string name="app_accent">App accent color</string>
     <string name="accent_wallpaper">System wallpaper</string>
     <string name="copy_accent_island">Copy current accent to island</string>
