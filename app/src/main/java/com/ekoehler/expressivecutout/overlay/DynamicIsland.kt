@@ -2085,6 +2085,10 @@ private fun ExpandedContent(
         )
         return
     }
+    val aiState by GalaxyAiBus.state.collectAsStateWithLifecycle()
+    val aiForShownEvent = aiState.takeIf { it.notificationKey != null && it.notificationKey == event.notificationKey }
+    val aiEligible = aiEnabled && event.notificationKey != null
+    val aiReplyAction = event.actions.firstOrNull { it.reply != null }
     val density = LocalDensity.current
     val relativeTime = rememberRelativeTime(event.postTimeMs)
     val headerText = formatNotificationHeader(
