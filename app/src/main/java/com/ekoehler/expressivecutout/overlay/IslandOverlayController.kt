@@ -732,8 +732,24 @@ class IslandOverlayController(private val context: Context) {
                         event = event,
                         ringSettings = behaviour,
                         ringAllowed = awake && orientation != Configuration.ORIENTATION_LANDSCAPE,
-                        cameraCenterXDp = composeView?.let { com.ekoehler.expressivecutout.core.CutoutMetrics.cutoutCenterPx(it)?.x?.div(density) },
-                        cameraCenterYDp = composeView?.let { com.ekoehler.expressivecutout.core.CutoutMetrics.cutoutCenterPx(it)?.y?.div(density) },
+                        // DisplayCutout coordinates are screen/window coordinates, while DynamicIsland draws
+                        // inside our narrow accessibility-overlay window. Convert the physical camera
+                        // centre into ComposeView-local coordinates or the ring is placed ~half a
+                        // screen-width outside this window and gets clipped.
+                        cameraCenterXDp = composeView?.let { view ->
+                            com.ekoehler.expressivecutout.core.CutoutMetrics.cutoutCenterPx(view)?.let { center ->
+                                val location = IntArray(2)
+                                view.getLocationOnScreen(location)
+                                (center.x - location[0]) / density
+                            }
+                        },
+                        cameraCenterYDp = composeView?.let { view ->
+                            com.ekoehler.expressivecutout.core.CutoutMetrics.cutoutCenterPx(view)?.let { center ->
+                                val location = IntArray(2)
+                                view.getLocationOnScreen(location)
+                                (center.y - location[1]) / density
+                            }
+                        },
 
                         collapsed = layout.collapsed,
                         expanded = layout.expanded,
