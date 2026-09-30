@@ -73,12 +73,13 @@ internal fun DynamicTilesScreen(
                     DynamicTile.PHONE -> phone.iconContainerColor
                     DynamicTile.TIMER -> timer.iconContainerColor
                     DynamicTile.ASSISTANT -> assistant.iconContainerColor
-                    DynamicTile.MUSIC -> null
+                    DynamicTile.MUSIC, DynamicTile.DOWNLOADS, DynamicTile.NAVIGATION,
+                    DynamicTile.BATTERY, DynamicTile.NETWORK, DynamicTile.BLUETOOTH_AUDIO -> null
                 }
                 DynamicTileCard(
                     tile = tile,
                     shape = groupShape(index = index, lastIndex = lastIndex),
-                    enabled = tileEnabled[tile] != false,
+                    enabled = tileEnabled[tile] ?: tile.enabledByDefault,
                     containerColor = containerColor,
                     onClick = { onOpenTile(tile) },
                     onEnabledChange = { viewModel.setTileEnabled(tile, it) },

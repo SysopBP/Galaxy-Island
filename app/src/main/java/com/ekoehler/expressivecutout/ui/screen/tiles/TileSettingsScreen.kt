@@ -17,6 +17,8 @@ internal fun TileSettingsScreen(
     contentPadding: PaddingValues,
 ) {
     when (tile) {
+        DynamicTile.BATTERY, DynamicTile.NETWORK, DynamicTile.BLUETOOTH_AUDIO -> DeviceTileScreen(tile, viewModel, contentPadding)
+        DynamicTile.DOWNLOADS, DynamicTile.NAVIGATION -> NotificationTileScreen(tile, viewModel, contentPadding)
         DynamicTile.MUSIC -> MusicTileScreen(viewModel, contentPadding)
         DynamicTile.PHONE -> PhoneTileScreen(viewModel, contentPadding)
         DynamicTile.TIMER -> TimerTileScreen(viewModel, contentPadding)

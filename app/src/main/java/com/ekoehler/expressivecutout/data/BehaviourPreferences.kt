@@ -78,6 +78,10 @@ data class BehaviourSettings(
     val d2Enabled: Boolean = false,
     val persistentNotifications: Boolean = false,
     val cameraRingEnabled: Boolean = false,
+    val cameraRingNotifications: Boolean = true,
+    val cameraRingCalls: Boolean = true,
+    val cameraRingTimers: Boolean = false,
+    val cameraRingProgress: Boolean = false,
     val cameraRingMode: Int = 1,
     val cameraRingDiameter: Int = 28,
     val cameraRingThickness: Int = 2,
@@ -187,11 +191,15 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
             d2Enabled = prefs[D2_ENABLED] ?: false,
             persistentNotifications = (prefs[PERSISTENT_NOTIFICATIONS] ?: false),
             cameraRingEnabled = (prefs[CAMERA_RING_ENABLED] ?: false),
-            cameraRingMode = (prefs[CAMERA_RING_MODE] ?: 1).coerceIn(0, 2),
+            cameraRingNotifications = prefs[CAMERA_RING_NOTIFICATIONS] ?: true,
+            cameraRingCalls = prefs[CAMERA_RING_CALLS] ?: true,
+            cameraRingTimers = prefs[CAMERA_RING_TIMERS] ?: false,
+            cameraRingProgress = prefs[CAMERA_RING_PROGRESS] ?: false,
+            cameraRingMode = (prefs[CAMERA_RING_MODE] ?: 1).coerceIn(0, 3),
             cameraRingDiameter = (prefs[CAMERA_RING_DIAMETER] ?: 28).coerceIn(12, 60),
             cameraRingThickness = (prefs[CAMERA_RING_THICKNESS] ?: 2).coerceIn(1, 6),
             cameraRingBrightness = (prefs[CAMERA_RING_BRIGHTNESS] ?: 100).coerceIn(10, 100),
-            cameraRingColor = (prefs[CAMERA_RING_COLOR] ?: 0).coerceIn(0, 4),
+            cameraRingColor = (prefs[CAMERA_RING_COLOR] ?: 0).coerceIn(0, 11),
             notificationHaptic = (prefs[NOTIFICATION_HAPTIC] ?: 0).coerceIn(0, 3),
             reminderSeconds = (prefs[REMINDER_SECONDS] ?: 0).coerceIn(0, 300),
             persistentTimeoutSeconds = (prefs[PERSISTENT_TIMEOUT_SECONDS] ?: 0).coerceIn(0, 3600),
@@ -266,6 +274,10 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
         return JSONObject().apply {
             put("persistentNotifications", s.persistentNotifications)
             put("cameraRingEnabled", s.cameraRingEnabled)
+            put("cameraRingNotifications", s.cameraRingNotifications)
+            put("cameraRingCalls", s.cameraRingCalls)
+            put("cameraRingTimers", s.cameraRingTimers)
+            put("cameraRingProgress", s.cameraRingProgress)
             put("cameraRingMode", s.cameraRingMode)
             put("cameraRingDiameter", s.cameraRingDiameter)
             put("cameraRingThickness", s.cameraRingThickness)
@@ -326,11 +338,15 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
         context.behaviourDataStore.edit {
             if (obj.has("persistentNotifications")) it[PERSISTENT_NOTIFICATIONS] = obj.getBoolean("persistentNotifications")
             if (obj.has("cameraRingEnabled")) it[CAMERA_RING_ENABLED] = obj.getBoolean("cameraRingEnabled")
-            if (obj.has("cameraRingMode")) it[CAMERA_RING_MODE] = obj.getInt("cameraRingMode").coerceIn(0, 2)
+            if (obj.has("cameraRingNotifications")) it[CAMERA_RING_NOTIFICATIONS] = obj.getBoolean("cameraRingNotifications")
+            if (obj.has("cameraRingCalls")) it[CAMERA_RING_CALLS] = obj.getBoolean("cameraRingCalls")
+            if (obj.has("cameraRingTimers")) it[CAMERA_RING_TIMERS] = obj.getBoolean("cameraRingTimers")
+            if (obj.has("cameraRingProgress")) it[CAMERA_RING_PROGRESS] = obj.getBoolean("cameraRingProgress")
+            if (obj.has("cameraRingMode")) it[CAMERA_RING_MODE] = obj.getInt("cameraRingMode").coerceIn(0, 3)
             if (obj.has("cameraRingDiameter")) it[CAMERA_RING_DIAMETER] = obj.getInt("cameraRingDiameter").coerceIn(12, 60)
             if (obj.has("cameraRingThickness")) it[CAMERA_RING_THICKNESS] = obj.getInt("cameraRingThickness").coerceIn(1, 6)
             if (obj.has("cameraRingBrightness")) it[CAMERA_RING_BRIGHTNESS] = obj.getInt("cameraRingBrightness").coerceIn(10, 100)
-            if (obj.has("cameraRingColor")) it[CAMERA_RING_COLOR] = obj.getInt("cameraRingColor").coerceIn(0, 4)
+            if (obj.has("cameraRingColor")) it[CAMERA_RING_COLOR] = obj.getInt("cameraRingColor").coerceIn(0, 11)
             if (obj.has("notificationHaptic")) it[NOTIFICATION_HAPTIC] = obj.getInt("notificationHaptic").coerceIn(0, 3)
             if (obj.has("reminderSeconds")) it[REMINDER_SECONDS] = obj.getInt("reminderSeconds").coerceIn(0, 300)
             if (obj.has("persistentTimeoutSeconds")) it[PERSISTENT_TIMEOUT_SECONDS] = obj.getInt("persistentTimeoutSeconds").coerceIn(0, 3600)
@@ -621,9 +637,29 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
         it[CAMERA_RING_ENABLED] = value
     }
 
+    /** Chooses whether notifications may light the camera ring. */
+    suspend fun setCameraRingNotifications(value: Boolean) = context.behaviourDataStore.edit {
+        it[CAMERA_RING_NOTIFICATIONS] = value
+    }
+
+    /** Chooses whether calls may light the camera ring. */
+    suspend fun setCameraRingCalls(value: Boolean) = context.behaviourDataStore.edit {
+        it[CAMERA_RING_CALLS] = value
+    }
+
+    /** Chooses whether timers may light the camera ring. */
+    suspend fun setCameraRingTimers(value: Boolean) = context.behaviourDataStore.edit {
+        it[CAMERA_RING_TIMERS] = value
+    }
+
+    /** Chooses whether progress may light the camera ring. */
+    suspend fun setCameraRingProgress(value: Boolean) = context.behaviourDataStore.edit {
+        it[CAMERA_RING_PROGRESS] = value
+    }
+
     /** Saves the cameraRingMode option with its supported range. */
     suspend fun setCameraRingMode(value: Int) = context.behaviourDataStore.edit {
-        it[CAMERA_RING_MODE] = value.coerceIn(0, 2)
+        it[CAMERA_RING_MODE] = value.coerceIn(0, 3)
     }
 
     /** Saves the cameraRingDiameter option with its supported range. */
@@ -643,7 +679,7 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
 
     /** Saves the cameraRingColor option with its supported range. */
     suspend fun setCameraRingColor(value: Int) = context.behaviourDataStore.edit {
-        it[CAMERA_RING_COLOR] = value.coerceIn(0, 4)
+        it[CAMERA_RING_COLOR] = value.coerceIn(0, 11)
     }
 
     /** Saves the notificationHaptic option with its supported range. */
@@ -668,6 +704,10 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
         val D2_ENABLED = booleanPreferencesKey("d2Enabled")
         val PERSISTENT_NOTIFICATIONS = booleanPreferencesKey("persistentNotifications")
         val CAMERA_RING_ENABLED = booleanPreferencesKey("cameraRingEnabled")
+        val CAMERA_RING_NOTIFICATIONS = booleanPreferencesKey("cameraRingNotifications")
+        val CAMERA_RING_CALLS = booleanPreferencesKey("cameraRingCalls")
+        val CAMERA_RING_TIMERS = booleanPreferencesKey("cameraRingTimers")
+        val CAMERA_RING_PROGRESS = booleanPreferencesKey("cameraRingProgress")
         val CAMERA_RING_MODE = intPreferencesKey("cameraRingMode")
         val CAMERA_RING_DIAMETER = intPreferencesKey("cameraRingDiameter")
         val CAMERA_RING_THICKNESS = intPreferencesKey("cameraRingThickness")

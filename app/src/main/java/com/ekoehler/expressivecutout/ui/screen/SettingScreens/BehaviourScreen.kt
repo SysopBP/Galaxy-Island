@@ -118,16 +118,51 @@ internal fun BehaviourScreen(
             shape = groupedShape(true, true), title = "Light around camera", description = "Screen-on ring for notifications. Adjust camera alignment under Size & position.",
             checked = behaviour.cameraRingEnabled, onCheckedChange = viewModel::setCameraRingEnabled,
         )
+        SettingsToggleCard(
+            shape = groupedShape(true, true), title = "Ring for notifications",
+            description = "Briefly light for audible notification alerts. Silent notifications stay quiet.",
+            checked = behaviour.cameraRingNotifications, onCheckedChange = viewModel::setCameraRingNotifications,
+        )
+        SettingsToggleCard(
+            shape = groupedShape(true, true), title = "Ring for calls",
+            description = "Briefly light when a call tile appears.",
+            checked = behaviour.cameraRingCalls, onCheckedChange = viewModel::setCameraRingCalls,
+        )
+        SettingsToggleCard(
+            shape = groupedShape(true, true), title = "Ring for timers",
+            description = "Briefly light when a timer tile appears.",
+            checked = behaviour.cameraRingTimers, onCheckedChange = viewModel::setCameraRingTimers,
+        )
+        SettingsToggleCard(
+            shape = groupedShape(true, true), title = "Ring for progress",
+            description = "Briefly light for download and progress tiles; off by default.",
+            checked = behaviour.cameraRingProgress, onCheckedChange = viewModel::setCameraRingProgress,
+        )
         BehaviourSegmentedRow(
             shape = groupedShape(true, true), label = "Ring effect",
-            options = listOf("Steady", "Pulse", "Rotate"),
+            options = listOf("Steady", "Pulse", "Rotate", "Frosted"),
             selectedIndex = behaviour.cameraRingMode, onSelect = viewModel::setCameraRingMode,
         )
-        BehaviourSegmentedRow(
-            shape = groupedShape(true, true), label = "Ring color",
-            options = listOf("App", "Blue", "Green", "Pink", "Amber"),
-            selectedIndex = behaviour.cameraRingColor, onSelect = viewModel::setCameraRingColor,
-        )
+        androidx.compose.material3.TextButton(onClick = {
+            viewModel.setCameraRingMode(3)
+            viewModel.setCameraRingColor(11)
+        }) { Text("Use black frosted spinner") }
+        var showRingColors by remember { mutableStateOf(false) }
+        val ringColors = listOf("App", "Blue", "Green", "Pink", "Amber", "Wine red",
+            "Purple", "Cyan", "Orange", "White", "Silver", "Black frost")
+        androidx.compose.material3.TextButton(onClick = { showRingColors = !showRingColors }) {
+            Text("Ring color: ${ringColors[behaviour.cameraRingColor.coerceIn(ringColors.indices)]}")
+        }
+        AnimatedVisibility(showRingColors) {
+            OptionSelectionCard(
+                title = "Ring color",
+                options = ringColors.mapIndexed { index, label -> SelectableOption(index, label) },
+                selectedValue = behaviour.cameraRingColor,
+                onSelectionChange = { viewModel.setCameraRingColor(it); showRingColors = false },
+            )
+        }
+        Text("Frosted uses a black glass track with a rotating highlight. Choose Black frost for a silver spinner.",
+            style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp))
         BehaviourSegmentedRow(
             shape = groupedShape(true, true), label = "Notification haptic",
             options = listOf("System", "Soft", "Double", "Heartbeat"),

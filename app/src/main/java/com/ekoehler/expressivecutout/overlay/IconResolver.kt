@@ -165,6 +165,8 @@ class IconResolver(private val context: Context) {
             contentIntent = signal.contentIntent,
             notificationKey = signal.key,
             progressData = signal.progressData,
+            liveNotificationTile = signal.liveNotificationTile,
+            isSilent = signal.isSilent,
             packageName = packageName,
             appColor = appColor,
             actions = signal.actions.map { action ->

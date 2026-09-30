@@ -62,6 +62,7 @@ sealed interface CutoutSignal {
         val smallIcon: Icon? = null,
         val progressData: ProgressData? = null,
         val isSilent: Boolean = false,
+        val liveNotificationTile: DynamicTile? = null,
     ) : CutoutSignal {
 
         /**

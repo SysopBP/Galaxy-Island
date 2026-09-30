@@ -235,8 +235,8 @@
 
     <!-- Appearance tab -->
     <string name="appearance_section_title">Appearance</string>
-    <string name="appearance_glass_title">Guardian Glass</string>
-    <string name="appearance_glass_desc">Use translucent One UI 9 surfaces, a soft highlight edge and deeper floating depth.</string>
+    <string name="appearance_glass_title">Frosted Galaxy pill</string>
+    <string name="appearance_glass_desc">Use translucent frosted glass, a soft highlight edge and floating depth for the compact and expanded Galaxy Island.</string>
     <string name="appearance_shadow_title">Shadow</string>
     <string name="appearance_shadow_desc">Cast a soft shadow beneath the island.</string>
     <string name="appearance_page_transition_title">Page transition</string>
@@ -604,18 +604,6 @@
     <string name="behaviour_displayWhileDnd_desc">Display notifications even when do not disturb is enabled</string>
     <string name="behaviour_alertOnNotif_title">Vibrate/rings on notification</string>
     <string name="behaviour_alertOnNotif_desc">Vibrates or rings when a notification arrives, based on the device ringing mode. This is useful if you disabled Android heads-up notifications</string>
-    <string name="status_bar_replacement_title">Use Galaxy Island status icons</string>
-    <string name="status_bar_replacement_desc">Replace Samsung status-bar indicators with Galaxy Island icons while keeping space clear around the camera.</string>
-    <string name="status_bar_replacement_notifications_title">Notification icons</string>
-    <string name="status_bar_replacement_notifications_desc">Show notification indicators on the left side of the camera.</string>
-    <string name="status_bar_replacement_cellular_title">Cellular signal</string>
-    <string name="status_bar_replacement_cellular_desc">Show signal strength, SIM state and LTE/4G/5G network type, including dual-SIM state.</string>
-    <string name="status_bar_replacement_wifi_title">Wi-Fi</string>
-    <string name="status_bar_replacement_wifi_desc">Show the current Wi-Fi connection and signal strength.</string>
-    <string name="status_bar_replacement_battery_title">Battery</string>
-    <string name="status_bar_replacement_battery_desc">Show battery level, charging state and percentage.</string>
-    <string name="status_bar_replacement_connectivity_title">Other system indicators</string>
-    <string name="status_bar_replacement_connectivity_desc">Show Bluetooth, VPN, hotspot, alarm, DND, silent/vibrate and other active states.</string>
     <string name="statusbar_preview_time">2:34</string>
     <string name="test_progress_complete_title">Download complete</string>
     <string name="test_progress_complete_text">document_preview.pdf</string>
@@ -625,4 +613,24 @@
     <string name="copy_accent_island">Copy current accent to island</string>
     <string name="copy_accent_explanation">Applies a dark translucent fill, accent border and white text to the island. More fill, opacity and shape options are in Appearance.</string>
     <string name="reset_app_theme">Reset app theme</string>
+    <string name="tile_downloads">Downloads &amp; progress</string>
+    <string name="tile_downloads_desc">Live progress from download, upload and transfer notifications. Ends when completed or removed.</string>
+    <string name="tile_navigation">Navigation</string>
+    <string name="tile_navigation_desc">Ongoing navigation notification titles and actions. Requires the navigation app to publish a navigation notification.</string>
+    <string name="tile_live_source_note">Uses notification access and respects your Apps filters and Do Not Disturb settings. Tap the expanded tile to open its app.</string>
+    <string name="tile_battery">Battery &amp; charging</string>
+    <string name="tile_battery_desc">Live battery percentage and charging state.</string>
+    <string name="tile_network">Network &amp; VPN</string>
+    <string name="tile_network_desc">Current Wi-Fi, mobile data or VPN connection status.</string>
+    <string name="tile_bluetooth_audio">Bluetooth audio</string>
+    <string name="tile_bluetooth_audio_desc">Shows while a Bluetooth audio output is connected.</string>
+    <string name="tile_device_note">Refreshes every five seconds. Opens the relevant system settings when tapped. Device status tiles do not trigger the camera ring.</string>
+    <string name="tile_battery_charging">Charging</string>
+    <string name="tile_battery_discharging">On battery</string>
+    <string name="tile_network_wifi">Wi-Fi</string>
+    <string name="tile_network_mobile">Mobile data</string>
+    <string name="tile_network_vpn">VPN active</string>
+    <string name="tile_network_other">Network connected</string>
+    <string name="tile_network_offline">Offline</string>
+    <string name="tile_audio_connected">Bluetooth audio connected</string>
 </resources>

@@ -60,6 +60,8 @@ sealed interface IslandIcon {
 @Immutable
 data class IslandEvent(
     val id: Long,
+    /** Monotonic start of the alert; preserved while a live notification updates. */
+    val alertStartedAtMs: Long = (System.nanoTime() / 1_000_000L),
     val icon: IslandIcon,
     val label: String,
     val detail: String? = null,
@@ -135,6 +137,12 @@ data class IslandEvent(
      * Is null otherwise
      */
     val progressData: ProgressData? = null,
+    /** Device status source, updated and retired by the overlay controller. */
+    val liveDeviceTile: com.ekoehler.expressivecutout.core.DynamicTile? = null,
+    /** Notification source whose lifecycle is owned by the notification listener. */
+    val liveNotificationTile: com.ekoehler.expressivecutout.core.DynamicTile? = null,
+    /** Silent notifications never light the camera ring. */
+    val isSilent: Boolean = false,
     /** The package name of the app that posted this event, if any. */
     val packageName: String? = null,
     /** The primary branding color extracted from the posting app's default launcher icon, if any. */

@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import com.ekoehler.expressivecutout.core.DynamicTile
 import com.ekoehler.expressivecutout.core.CutoutSignal
 import com.ekoehler.expressivecutout.core.IslandEventBus
 import com.ekoehler.expressivecutout.core.MediaArt
@@ -78,6 +79,9 @@ class CutoutNotificationListenerService : NotificationListenerService() {
      * per call and can clear the tile when that exact notification is removed. Main-thread only.
      */
     private var currentCallKey: String? = null
+
+    /** Live notification keys to retire on source changes or listener disconnect. */
+    private val liveNotificationKeys = linkedSetOf<String>()
 
     /**
      * Key of the count-down notification currently driving the timer tile, mirroring
@@ -182,6 +186,12 @@ class CutoutNotificationListenerService : NotificationListenerService() {
         _bound.value = true
         observeBehaviour()
         seedMediaArt()
+        runCatching { activeNotifications }.onSuccess { notifications ->
+            notifications.orEmpty().filter {
+                getProgressDataOrNull(it)?.isComplete == false ||
+                    (it.notification.category == Notification.CATEGORY_NAVIGATION && it.isOngoing)
+            }.forEach { onNotificationPosted(it) }
+        }.onFailure { Log.w(TAG, "Could not restore live notification tiles", it) }
     }
 
     /**
@@ -205,6 +215,8 @@ class CutoutNotificationListenerService : NotificationListenerService() {
     override fun onListenerDisconnected() {
         if (instance === this) instance = null
         _bound.value = false
+        liveNotificationKeys.forEach(IslandEventBus::removeNotification)
+        liveNotificationKeys.clear()
     }
 
     /**
@@ -214,6 +226,8 @@ class CutoutNotificationListenerService : NotificationListenerService() {
     override fun onDestroy() {
         if (instance === this) instance = null
         _bound.value = false
+        liveNotificationKeys.forEach(IslandEventBus::removeNotification)
+        liveNotificationKeys.clear()
         // Drop the effects mute by hand before the job that would have done it dies with the scope:
         // a fetch-back caught mid-flight by a teardown must not leave the device silent.
         if (mutedReturns > 0) setEffectsMuted(false)
@@ -576,6 +590,11 @@ class CutoutNotificationListenerService : NotificationListenerService() {
             return
         }
 
+        val sourceStillLive = getProgressDataOrNull(notification)?.isComplete == false ||
+            (notification.notification.category == Notification.CATEGORY_NAVIGATION && notification.isOngoing)
+        if (!sourceStillLive && liveNotificationKeys.remove(notification.key)) {
+            IslandEventBus.removeNotification(notification.key)
+        }
         if (!notification.shouldSurface()) return
 
         if (suppressedByDnd()) return
@@ -584,6 +603,12 @@ class CutoutNotificationListenerService : NotificationListenerService() {
         val title = extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString()
         val text = extras?.getCharSequence(Notification.EXTRA_TEXT)?.toString()
         val progress = getProgressDataOrNull(sbn)
+        val navigation = notification.notification.category == Notification.CATEGORY_NAVIGATION && notification.isOngoing
+        val liveTile = when {
+            navigation -> DynamicTile.NAVIGATION
+            progress != null && !progress.isComplete -> DynamicTile.DOWNLOADS
+            else -> null
+        }
         val appName = NotificationHeaderResolver.resolveAppName(this, notification.packageName)
         val postTimeMs = NotificationHeaderResolver.resolvePostTimeMs(notification.postTime)
 
@@ -592,13 +617,13 @@ class CutoutNotificationListenerService : NotificationListenerService() {
         // their text changes every step, so they never match a fingerprint, and a stalled one at a
         // fixed percent must not read as a re-pop and vanish.
         val fingerprint = fingerprint(notification.packageName, title, text)
-        if (progress == null && suppressed.isSuppressed(fingerprint)) return
+        if (liveTile == null && progress == null && suppressed.isSuppressed(fingerprint)) return
 
         val isSilent = isSilentNotification(notification, rankingMap)
         val islandEvent = CutoutSignal.Notification(
             packageName = notification.packageName,
             title = title,
-            text = text,
+            text = if (liveTile == null) text else null,
             appName = appName,
             postTimeMs = postTimeMs,
             key = notification.key,
@@ -608,8 +633,17 @@ class CutoutNotificationListenerService : NotificationListenerService() {
             smallIcon = notification.notification.smallIcon,
             progressData = progress,
             isSilent = isSilent,
+            liveNotificationTile = liveTile,
         )
 
+        if (liveTile != null) {
+            liveNotificationKeys.add(notification.key)
+            while (liveNotificationKeys.size > MAX_TRACKED_KEYS) {
+                val oldest = liveNotificationKeys.first()
+                liveNotificationKeys.remove(oldest)
+                IslandEventBus.removeNotification(oldest)
+            }
+        }
         IslandEventBus.emit(islandEvent)
         rememberShown(notification.key, fingerprint)
 
@@ -617,17 +651,17 @@ class CutoutNotificationListenerService : NotificationListenerService() {
         // progress notifications: they re-post on every step and would buzz the whole way through a
         // download. Independent of the hold below — the two settings no longer share a lever.
         val chosenHaptic = appHapticPatterns[notification.packageName] ?: notificationHaptic
-        if (chosenHaptic != 0 && progress == null && !isSilent) {
+        if (chosenHaptic != 0 && progress == null && liveTile == null && !isSilent) {
             NotificationHaptics.play(this, chosenHaptic)
         }
-        if (alertOnNotification && progress == null) {
+        if (alertOnNotification && progress == null && liveTile == null) {
             alertFor(notification, allowVibration = chosenHaptic == 0)
         }
 
         // Never hold a transfer still running: it re-posts on every step, so holding it would fight
         // the download for the shade and hide the very bar the user wants to watch. Its completion
         // notice carries no progress, so that one auto-dismisses normally.
-        if (dismissNotifications && !persistentNotifications && progress == null && isUserPresent()) {
+        if (dismissNotifications && !persistentNotifications && progress == null && liveTile == null && isUserPresent()) {
             hold(notification.key)
         }
     }
@@ -662,6 +696,7 @@ class CutoutNotificationListenerService : NotificationListenerService() {
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
+        sbn?.key?.let(liveNotificationKeys::remove)
         // Clears call cutout when call ends
         if (sbn?.key != null && sbn.key == currentCallKey) {
             currentCallKey = null
@@ -798,6 +833,7 @@ class CutoutNotificationListenerService : NotificationListenerService() {
         // tile exists to show, so carrying one overrides both tests — persistent foreground-service
         // notices without a bar (a VPN, a sync service) stay filtered out as before.
         if (getProgressDataOrNull(this) != null) return true
+        if (notification.category == Notification.CATEGORY_NAVIGATION && isOngoing) return true
         val isOngoing = flags and Notification.FLAG_ONGOING_EVENT != 0
         return isClearable && !isOngoing
     }
