@@ -56,6 +56,7 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.CallEnd
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -1040,6 +1041,7 @@ fun DynamicIsland(
                                         onAction = onAction,
                                         onStartReply = { replyingTo = it },
                                         onCancelReply = { replyingTo = null },
+                                        onAssistantLaunch = onAssistantLaunch,
                                         onSendReply = { text ->
                                             replyingTo?.let { action ->
                                                 sentReply = action to text
@@ -2099,6 +2101,7 @@ private fun ExpandedContent(
     onAction: (IslandAction) -> Unit,
     onStartReply: (IslandAction) -> Unit,
     onCancelReply: () -> Unit,
+    onAssistantLaunch: (() -> Unit)? = null,
     onSendReply: (String) -> Unit,
     onDismiss: () -> Unit = {},
     onHeightMeasured: ((Int) -> Unit)? = null,
@@ -2277,6 +2280,7 @@ private fun ExpandedContent(
                     inputStyle = appearance.replyInputStyle,
                     cancelOnLeft = appearance.cancelButtonOnLeft,
                     heightDp = appearance.actionButtonHeightDp,
+                    onAssistantLaunch = onAssistantLaunch,
                     onSend = onSendReply,
                     onCancel = onCancelReply,
                 )
@@ -2540,6 +2544,7 @@ private fun ReplyRow(
     inputStyle: ReplyInputStyle,
     cancelOnLeft: Boolean,
     heightDp: Int,
+    onAssistantLaunch: (() -> Unit)? = null,
     onSend: (String) -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -2566,6 +2571,7 @@ private fun ReplyRow(
             focusRequester = focusRequester,
             onSend = send,
             onCancel = onCancel,
+            onAssistantLaunch = onAssistantLaunch,
         )
         return
     }
@@ -2599,6 +2605,11 @@ private fun ReplyRow(
         if (!cancelOnLeft) {
             ReplyCancelButton(cancelColor, heightDp, cancelInteraction, onCancel)
         }
+        if (onAssistantLaunch != null) {
+            IconButton(onClick = onAssistantLaunch, modifier = Modifier.size(heightDp.dp)) {
+                Icon(Icons.Rounded.AutoAwesome, contentDescription = "Open assistant while typing")
+            }
+        }
         ReplySendButton(sendColor, text.isNotBlank(), heightDp, sendInteraction, send)
     }
 }
@@ -2621,6 +2632,7 @@ private fun SegmentedReplyRow(
     focusRequester: FocusRequester,
     onSend: () -> Unit,
     onCancel: () -> Unit,
+    onAssistantLaunch: (() -> Unit)? = null,
 ) {
     val cap = (heightDp / 2).dp
     val inner = 8.dp
@@ -2657,6 +2669,17 @@ private fun SegmentedReplyRow(
             onSend = onSend,
         )
         if (!cancelOnLeft) cancel(innerShape)
+        if (onAssistantLaunch != null) {
+            ReplySegmentButton(
+                icon = Icons.Rounded.AutoAwesome,
+                contentDescription = "Open assistant while typing",
+                container = LocalContentColor.current.copy(alpha = 0.12f),
+                content = LocalContentColor.current.copy(alpha = 0.85f),
+                shape = innerShape,
+                heightDp = heightDp,
+                onClick = onAssistantLaunch,
+            )
+        }
         val sendEnabled = text.isNotBlank()
         ReplySegmentButton(
             icon = Icons.AutoMirrored.Rounded.Send,
