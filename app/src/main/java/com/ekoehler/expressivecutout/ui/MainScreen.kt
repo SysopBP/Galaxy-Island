@@ -236,7 +236,7 @@ fun MainScreen(viewModel: AppViewModel = viewModel()) {
                             },
                         )
 
-                        HomeTab.Permissions -> PermissionsTab(contentPadding)
+                        HomeTab.Permissions -> PermissionsTab(contentPadding, viewModel)
 
                         HomeTab.Profile -> ProfileTab(
                             viewModel = viewModel,
