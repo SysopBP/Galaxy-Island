@@ -1133,14 +1133,19 @@ fun DynamicIsland(
             }
         }
         LaunchedEffect(ringEvent?.id, ringAllowed, ringExpired, cameraCenterXDp, cameraCenterYDp) {
-            Log.i("GalaxyIslandCameraRing",
-                "policy event=${ringEvent?.id} allowed=$ringAllowed expired=$ringExpired " +
-                    "cameraDp=($cameraCenterXDp,$cameraCenterYDp) displayWidthDp=$displayWidthDp")
+            Log.i(
+                "GalaxyIslandCameraRing",
+                "policy event=${ringEvent?.id} allowed=${ringAllowed} expired=${ringExpired} " +
+                    "cameraDp=(${cameraCenterXDp},${cameraCenterYDp}) displayWidthDp=${displayWidthDp}",
+            )
         }
         if (ringAllowed && !ringExpired && ringEvent != null) {
             val ringDiameter = ringSettings.cameraRingDiameter.coerceAtMost(collapsed.heightDp)
-            Log.i("GalaxyIslandCameraRing",
-                "mount id=${ringEvent.id} diameterDp=$ringDiameter cameraDp=($cameraCenterXDp,$cameraCenterYDp)")
+            Log.i(
+                "GalaxyIslandCameraRing",
+                "mount id=${ringEvent.id} diameterDp=${ringDiameter} " +
+                    "cameraDp=(${cameraCenterXDp},${cameraCenterYDp})",
+            )
             val cameraX = cameraCenterXDp ?: (displayWidthDp / 2f)
             val cameraY = cameraCenterYDp ?: (collapsed.offsetYDp + collapsed.heightDp / 2f)
             CameraNotificationRing(
