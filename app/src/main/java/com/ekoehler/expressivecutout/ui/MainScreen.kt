@@ -214,6 +214,7 @@ fun MainScreen(viewModel: AppViewModel = viewModel()) {
                             selectedEvent = selectedEvent,
                             onOpenSizePosition = { settingsRoute = SettingsRoute.SizePosition },
                             onOpenDynamicTiles = { settingsRoute = SettingsRoute.DynamicTiles },
+                            onOpenGalaxyAi = { settingsRoute = SettingsRoute.GalaxyAi },
                             onOpenTile = { tile ->
                                 selectedTileName = tile.name
                                 settingsRoute = SettingsRoute.DynamicTileDetail
@@ -296,6 +297,7 @@ fun MainScreen(viewModel: AppViewModel = viewModel()) {
                     else -> when (settingsRoute) {
                         SettingsRoute.SizePosition -> stringResource(R.string.appearance_title)
                         SettingsRoute.DynamicTiles -> stringResource(R.string.dynamic_tiles_title)
+                        SettingsRoute.GalaxyAi -> "Galaxy AI"
                         SettingsRoute.DynamicTileDetail ->
                             selectedTile?.let { stringResource(it.labelRes) } ?: stringResource(R.string.dynamic_tiles_title)
                         SettingsRoute.Apps -> stringResource(R.string.apps_title)
