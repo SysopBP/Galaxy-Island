@@ -1143,7 +1143,7 @@ fun DynamicIsland(
         }
         // Real camera ownership is an independent ring source. Existing notification/call/timer
         // policy remains unchanged; camera activity shares the proven renderer.
-        val cameraRingActive = ringSettings.cameraRingEnabled && cameraActive
+        val cameraRingActive = cameraActive
         val shouldMountRing = ringAllowed && (cameraRingActive || (!ringExpired && ringEvent != null))
         LaunchedEffect(cameraActive, cameraRingActive, shouldMountRing) {
             Log.i("GalaxyIslandCameraRing",
