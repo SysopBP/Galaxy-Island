@@ -3,6 +3,7 @@ package com.ekoehler.expressivecutout.overlay
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.os.Build
 import android.os.SystemClock
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
