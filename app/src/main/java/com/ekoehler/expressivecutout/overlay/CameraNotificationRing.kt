@@ -1,5 +1,7 @@
 package com.ekoehler.expressivecutout.overlay
 
+import android.util.Log
+
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -49,12 +51,17 @@ internal fun CameraNotificationRing(settings: BehaviourSettings, accent: Color, 
         11 -> Color(0xFF848F9E)
         else -> accent
     }
+    androidx.compose.runtime.LaunchedEffect(settings.cameraRingDiameter, settings.cameraRingThickness) {
+        Log.i("GalaxyIslandCameraRing",
+            "canvas-mounted diameterDp=${settings.cameraRingDiameter} thicknessDp=${settings.cameraRingThickness}")
+    }
     Canvas(
         modifier
             .offset(x = settings.cameraRingOffsetX.dp, y = settings.cameraRingOffsetY.dp)
             .requiredSize(settings.cameraRingDiameter.coerceAtLeast(12).dp)
             .zIndex(100f)
     ) {
+        Log.v("GalaxyIslandCameraRing", "canvas-draw size=${size.width}x${size.height}")
         val width = settings.cameraRingThickness.coerceAtLeast(2).dp.toPx()
         val radius = ((size.minDimension - width) / 2f).coerceAtLeast(0f)
         val pulse = if (settings.cameraRingMode == 1) 0.3f + 0.7f *
