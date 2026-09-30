@@ -1,5 +1,30 @@
 [
   {
+    "version": "0.2.1-beta",
+    "description": "Galaxy Island 2.1 — glass expansion, camera-ring reliability, AI and root bridge upgrades",
+    "features": [
+      "Expanded pill glass system with Standard, Frosted, Deep Frost, Clear Glass and Black Frost preserved",
+      "Six additional frosted pill looks: Soft Frost, Heavy Frost, Smoke Frost, AMOLED Frost, Crystal Frost and Silver Frost",
+      "New Pill glass mode selector in Appearance with distinct edge, shade and highlight treatments",
+      "Expanded/pop-out surfaces inherit the Galaxy Island glass treatment for a more consistent One UI-inspired look",
+      "Camera ring controls and real-event integration for notifications, calls, timers and supported progress activity",
+      "Expanded camera-ring appearance options including additional colors and frosted/spinner styling",
+      "Root Mode section for enhanced privileged features when root is available",
+      "Root bridge/fallback architecture so normal operation can continue when privileged access is temporarily unavailable after reboot",
+      "Root/bridge watchdog support to recover and re-evaluate privileged integration state",
+      "Integrated AI feature work grouped into its own settings area",
+      "Additional dynamic-tile expansion while keeping status-bar replacement work separate from Galaxy Island"
+    ],
+    "bugfixes": [
+      "Fixed camera ring working from test triggers but failing to appear reliably for real Android events",
+      "Camera-ring alert lifetime now starts when the eligible event reaches the overlay instead of expiring during notification routing",
+      "Camera ring is no longer tied to the pill being collapsed, so auto-expanded notifications can light it correctly",
+      "Preserved stable event IDs so notification and progress updates do not continuously restart the camera ring",
+      "Kept AndroGlass/status-bar replacement integration out of Galaxy Island so both projects remain independent",
+      "Improved glass styling consistency between the collapsed pill and expanded pop-out surfaces"
+    ]
+  },
+  {
     "version": "0.2.0-beta",
     "description": "Shizuku, adaptive colours and permission dots",
     "features": [
