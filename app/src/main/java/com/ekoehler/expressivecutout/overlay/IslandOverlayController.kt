@@ -732,6 +732,7 @@ class IslandOverlayController(private val context: Context) {
                         event = event,
                         ringSettings = behaviour,
                         ringAllowed = awake && orientation != Configuration.ORIENTATION_LANDSCAPE,
+                        cameraActive = cameraActive,
                         // DisplayCutout coordinates are screen/window coordinates, while DynamicIsland draws
                         // inside our narrow accessibility-overlay window. Convert the physical camera
                         // centre into ComposeView-local coordinates or the ring is placed ~half a
