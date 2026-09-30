@@ -197,6 +197,8 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
             cameraRingProgress = prefs[CAMERA_RING_PROGRESS] ?: false,
             cameraRingMode = (prefs[CAMERA_RING_MODE] ?: 1).coerceIn(0, 3),
             cameraRingDiameter = (prefs[CAMERA_RING_DIAMETER] ?: 28).coerceIn(12, 60),
+            cameraRingOffsetX = (prefs[CAMERA_RING_OFFSET_X] ?: 0).coerceIn(-40, 40),
+            cameraRingOffsetY = (prefs[CAMERA_RING_OFFSET_Y] ?: 0).coerceIn(-40, 40),
             cameraRingThickness = (prefs[CAMERA_RING_THICKNESS] ?: 2).coerceIn(1, 6),
             cameraRingBrightness = (prefs[CAMERA_RING_BRIGHTNESS] ?: 100).coerceIn(10, 100),
             cameraRingColor = (prefs[CAMERA_RING_COLOR] ?: 0).coerceIn(0, 11),
@@ -280,6 +282,8 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
             put("cameraRingProgress", s.cameraRingProgress)
             put("cameraRingMode", s.cameraRingMode)
             put("cameraRingDiameter", s.cameraRingDiameter)
+            put("cameraRingOffsetX", s.cameraRingOffsetX)
+            put("cameraRingOffsetY", s.cameraRingOffsetY)
             put("cameraRingThickness", s.cameraRingThickness)
             put("cameraRingBrightness", s.cameraRingBrightness)
             put("cameraRingColor", s.cameraRingColor)
@@ -344,6 +348,8 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
             if (obj.has("cameraRingProgress")) it[CAMERA_RING_PROGRESS] = obj.getBoolean("cameraRingProgress")
             if (obj.has("cameraRingMode")) it[CAMERA_RING_MODE] = obj.getInt("cameraRingMode").coerceIn(0, 3)
             if (obj.has("cameraRingDiameter")) it[CAMERA_RING_DIAMETER] = obj.getInt("cameraRingDiameter").coerceIn(12, 60)
+            if (obj.has("cameraRingOffsetX")) it[CAMERA_RING_OFFSET_X] = obj.getInt("cameraRingOffsetX").coerceIn(-40, 40)
+            if (obj.has("cameraRingOffsetY")) it[CAMERA_RING_OFFSET_Y] = obj.getInt("cameraRingOffsetY").coerceIn(-40, 40)
             if (obj.has("cameraRingThickness")) it[CAMERA_RING_THICKNESS] = obj.getInt("cameraRingThickness").coerceIn(1, 6)
             if (obj.has("cameraRingBrightness")) it[CAMERA_RING_BRIGHTNESS] = obj.getInt("cameraRingBrightness").coerceIn(10, 100)
             if (obj.has("cameraRingColor")) it[CAMERA_RING_COLOR] = obj.getInt("cameraRingColor").coerceIn(0, 11)
@@ -668,6 +674,19 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
     }
 
     /** Saves the cameraRingThickness option with its supported range. */
+    suspend fun setCameraRingOffsetX(value: Int) = context.behaviourDataStore.edit {
+        it[CAMERA_RING_OFFSET_X] = value.coerceIn(-40, 40)
+    }
+
+    suspend fun setCameraRingOffsetY(value: Int) = context.behaviourDataStore.edit {
+        it[CAMERA_RING_OFFSET_Y] = value.coerceIn(-40, 40)
+    }
+
+    suspend fun resetCameraRingPosition() = context.behaviourDataStore.edit {
+        it[CAMERA_RING_OFFSET_X] = 0
+        it[CAMERA_RING_OFFSET_Y] = 0
+    }
+
     suspend fun setCameraRingThickness(value: Int) = context.behaviourDataStore.edit {
         it[CAMERA_RING_THICKNESS] = value.coerceIn(1, 6)
     }
@@ -710,6 +729,8 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
         val CAMERA_RING_PROGRESS = booleanPreferencesKey("cameraRingProgress")
         val CAMERA_RING_MODE = intPreferencesKey("cameraRingMode")
         val CAMERA_RING_DIAMETER = intPreferencesKey("cameraRingDiameter")
+        val CAMERA_RING_OFFSET_X = intPreferencesKey("cameraRingOffsetX")
+        val CAMERA_RING_OFFSET_Y = intPreferencesKey("cameraRingOffsetY")
         val CAMERA_RING_THICKNESS = intPreferencesKey("cameraRingThickness")
         val CAMERA_RING_BRIGHTNESS = intPreferencesKey("cameraRingBrightness")
         val CAMERA_RING_COLOR = intPreferencesKey("cameraRingColor")
