@@ -18,7 +18,8 @@ class CameraRingPolicyTest {
         assertTrue(event().shouldLightCameraRing(settings))
         assertFalse(event().shouldLightCameraRing(settings.copy(cameraRingEnabled = false)))
         assertFalse(event().shouldLightCameraRing(settings.copy(cameraRingNotifications = false)))
-        assertFalse(event().copy(isSilent = true).shouldLightCameraRing(settings))
+        // Silent only suppresses sound/haptics; it remains eligible for the visual camera ring.
+        assertTrue(event().copy(isSilent = true).shouldLightCameraRing(settings))
         assertFalse(event().copy(notificationKey = null).shouldLightCameraRing(settings))
     }
 
