@@ -18,7 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 fun AppTheme.isDark(): Boolean = when (this) {
     AppTheme.SYSTEM -> isSystemInDarkTheme()
     AppTheme.LIGHT -> false
-    AppTheme.DARK, AppTheme.AMOLED -> true
+    AppTheme.DARK, AppTheme.AMOLED, AppTheme.GLASS_AMOLED -> true
 }
 
 /**
@@ -56,7 +56,11 @@ fun ExpressiveCutoutTheme(
         )
     }
 
-    val colorScheme = if (appTheme == AppTheme.AMOLED) AppPalette.amoled(baseScheme) else baseScheme
+    val colorScheme = when (appTheme) {
+        AppTheme.AMOLED -> AppPalette.amoled(baseScheme)
+        AppTheme.GLASS_AMOLED -> AppPalette.glassAmoled(baseScheme)
+        else -> baseScheme
+    }
 
     MaterialTheme(
         colorScheme = colorScheme,
