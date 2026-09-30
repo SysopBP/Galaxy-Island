@@ -636,6 +636,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         behaviourPreferences.setCameraRingDiameter(value)
     }
 
+    fun setCameraRingOffsetX(value: Int) = viewModelScope.launch {
+        behaviourPreferences.setCameraRingOffsetX(value)
+    }
+
+    fun setCameraRingOffsetY(value: Int) = viewModelScope.launch {
+        behaviourPreferences.setCameraRingOffsetY(value)
+    }
+
+    fun resetCameraRingPosition() = viewModelScope.launch {
+        behaviourPreferences.resetCameraRingPosition()
+    }
+
     fun setCameraRingThickness(value: Int) = viewModelScope.launch {
         behaviourPreferences.setCameraRingThickness(value)
     }
