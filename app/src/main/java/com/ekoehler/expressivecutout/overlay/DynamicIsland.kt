@@ -450,6 +450,8 @@ fun DynamicIsland(
     hapticsOnPop: Boolean = false,
     ringSettings: com.ekoehler.expressivecutout.data.BehaviourSettings = com.ekoehler.expressivecutout.data.BehaviourSettings(),
     ringAllowed: Boolean = true,
+    cameraCenterXDp: Float? = null,
+    cameraCenterYDp: Float? = null,
     permissionDotsEnabled: Boolean = false,
     permissionUsage: PermissionUsage = PermissionUsage(),
     permissionDotPosition: PermissionDotPosition = PermissionDotPosition.RIGHT,
@@ -1132,14 +1134,15 @@ fun DynamicIsland(
         }
         if (ringAllowed && !ringExpired && ringEvent != null) {
             val ringDiameter = ringSettings.cameraRingDiameter.coerceAtMost(collapsed.heightDp)
+            val cameraX = cameraCenterXDp ?: (displayWidthDp / 2f)
+            val cameraY = cameraCenterYDp ?: (collapsed.offsetYDp + collapsed.heightDp / 2f)
             CameraNotificationRing(
                 settings = ringSettings.copy(cameraRingDiameter = ringDiameter),
                 accent = ringEvent.accent,
-                modifier = Modifier.align(Alignment.TopCenter)
-                    .offset(
-                        x = collapsed.offsetXDp.dp,
-                        y = (collapsed.offsetYDp + (collapsed.heightDp - ringDiameter) / 2f).dp,
-                    ),
+                modifier = Modifier.offset(
+                    x = (cameraX - ringDiameter / 2f).dp,
+                    y = (cameraY - ringDiameter / 2f).dp,
+                ),
             )
         }
 
