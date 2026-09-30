@@ -28,6 +28,9 @@ enum class SwipeDismissDirection { LEFT, RIGHT, BOTH }
  */
 enum class SatellitePosition { LEFT, RIGHT }
 
+/** Root enhancement policy. Core Galaxy Island remains rootless in every mode. */
+enum class RootMode { OFF, AUTOMATIC, ENHANCED }
+
 /**
  * Which cutout state swipe-to-dismiss applies to. Ordered to match the settings selector
  * (Expanded / Both / Normal) so the ordinal doubles as the segment index.
@@ -76,6 +79,7 @@ enum class EmptyClickAction { NONE, OPEN_APP, OPEN_CENTER }
  */
 data class BehaviourSettings(
     val d2Enabled: Boolean = false,
+    val rootMode: RootMode = RootMode.AUTOMATIC,
     val persistentNotifications: Boolean = false,
     val cameraRingEnabled: Boolean = false,
     val cameraRingNotifications: Boolean = true,
@@ -191,6 +195,7 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
 
         BehaviourSettings(
             d2Enabled = prefs[D2_ENABLED] ?: false,
+            rootMode = prefs[ROOT_MODE]?.let { runCatching { RootMode.valueOf(it) }.getOrNull() } ?: RootMode.AUTOMATIC,
             persistentNotifications = (prefs[PERSISTENT_NOTIFICATIONS] ?: false),
             cameraRingEnabled = (prefs[CAMERA_RING_ENABLED] ?: false),
             cameraRingNotifications = prefs[CAMERA_RING_NOTIFICATIONS] ?: true,
@@ -719,10 +724,15 @@ class BehaviourPreferences(private val context: Context) : JsonSerializable {
     }
 
     /** Enables the paired lock gesture; deliberately excluded from imported settings. */
+    suspend fun setRootMode(mode: RootMode) = context.behaviourDataStore.edit {
+        it[ROOT_MODE] = mode.name
+    }
+
     suspend fun setD2Enabled(value: Boolean) = context.behaviourDataStore.edit { it[D2_ENABLED] = value }
 
     private companion object {
         val D2_ENABLED = booleanPreferencesKey("d2Enabled")
+        val ROOT_MODE = stringPreferencesKey("rootMode")
         val PERSISTENT_NOTIFICATIONS = booleanPreferencesKey("persistentNotifications")
         val CAMERA_RING_ENABLED = booleanPreferencesKey("cameraRingEnabled")
         val CAMERA_RING_NOTIFICATIONS = booleanPreferencesKey("cameraRingNotifications")
