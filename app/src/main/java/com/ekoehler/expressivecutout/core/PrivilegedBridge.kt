@@ -32,6 +32,15 @@ data class PrivilegedBridgeState(
 }
 
 object PrivilegedBridge {
+    @Volatile private var systemUiHeartbeatElapsedMs: Long = 0L
+
+    fun noteSystemUiHeartbeat(elapsedMs: Long = SystemClock.elapsedRealtime()) {
+        systemUiHeartbeatElapsedMs = elapsedMs
+    }
+
+    fun isSystemUiBridgeAlive(now: Long = SystemClock.elapsedRealtime()): Boolean =
+        systemUiHeartbeatElapsedMs > 0L && now - systemUiHeartbeatElapsedMs <= 90_000L
+
     suspend fun probe(
         mode: RootMode,
         previous: PrivilegedBridgeState? = null,
@@ -53,7 +62,7 @@ object PrivilegedBridge {
             rootAvailable = root,
             rootBridgeActive = root,
             // Root does not imply an injected SystemUI hook.
-            systemUiBridgeAvailable = previous?.systemUiBridgeAvailable == true && root,
+            systemUiBridgeAvailable = isSystemUiBridgeAlive(now),
             fallbackActive = !root,
             health = when {
                 root -> BridgeHealth.HEALTHY
