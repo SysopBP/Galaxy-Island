@@ -4,6 +4,8 @@ import android.util.Log
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
+import android.os.Handler
+import android.os.Looper
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
@@ -81,12 +83,7 @@ class GalaxyIslandXposedBridge : XposedModule() {
                     .intercept { chain ->
                         val result = chain.proceed()
                         val context = chain.thisObject as? Context
-                        context?.sendBroadcast(
-                            Intent(ACTION_BRIDGE_STATE)
-                                .setPackage("app.cutout.ringpreview")
-                                .putExtra(EXTRA_ACTIVE, true)
-                                .putExtra(EXTRA_HEARTBEAT, SystemClock.elapsedRealtime())
-                        )
+                        context?.let { startHeartbeat(it) }
                         log(Log.INFO, TAG, "GALAXY_ISLAND_SYSTEMUI_BRIDGE_INJECTED")
                         result
                     }
@@ -94,6 +91,30 @@ class GalaxyIslandXposedBridge : XposedModule() {
                 log(Log.WARN, TAG, "GALAXY_ISLAND_SYSTEMUI_BRIDGE_INJECT_FAILED", it)
             }
         }
+    }
+
+    private fun publishHeartbeat(context: Context) {
+        context.sendBroadcast(
+            Intent(ACTION_BRIDGE_STATE)
+                .setPackage("app.cutout.ringpreview")
+                .putExtra(EXTRA_ACTIVE, true)
+                .putExtra(EXTRA_HEARTBEAT, SystemClock.elapsedRealtime())
+        )
+    }
+
+    private fun startHeartbeat(context: Context) {
+        // SystemUI can start before Galaxy Island, so a one-shot onCreate broadcast is lossy.
+        // Keep publishing while the injected process is alive; the app can attach at any time.
+        val handler = Handler(Looper.getMainLooper())
+        val appContext = context.applicationContext
+        val beat = object : Runnable {
+            override fun run() {
+                runCatching { publishHeartbeat(appContext) }
+                    .onFailure { log(Log.WARN, TAG, "GALAXY_ISLAND_SYSTEMUI_HEARTBEAT_FAILED", it) }
+                handler.postDelayed(this, 20_000L)
+            }
+        }
+        handler.post(beat)
     }
 
     private fun installNamedProbes(loader: ClassLoader, event: String, targets: List<Pair<String, List<String>>>) {
