@@ -78,6 +78,7 @@ import com.ekoehler.expressivecutout.data.PhoneTileSettings
 import com.ekoehler.expressivecutout.data.TimerTilePreferences
 import com.ekoehler.expressivecutout.data.TimerTileSettings
 import com.ekoehler.expressivecutout.service.CutoutNotificationListenerService
+import com.ekoehler.expressivecutout.system.CameraUsageMonitor
 import com.ekoehler.expressivecutout.system.PermissionUsageMonitor
 import com.ekoehler.expressivecutout.ui.theme.ExpressiveCutoutTheme
 import kotlinx.coroutines.CoroutineScope
