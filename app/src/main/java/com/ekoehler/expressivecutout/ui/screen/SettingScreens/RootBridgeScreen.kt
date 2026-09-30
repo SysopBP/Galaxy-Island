@@ -55,8 +55,15 @@ fun RootBridgeScreen(viewModel: AppViewModel, contentPadding: PaddingValues) {
                 Text(if (bridge.rootAvailable) "Root ✓ available" else "Root • unavailable")
                 Text(if (bridge.rootBridgeActive) "Root bridge ✓ active" else "Root bridge • fallback")
                 Text(if (bridge.systemUiBridgeAvailable) "SystemUI bridge ✓ active" else "SystemUI bridge • not injected")
-                Text("Watchdog: " + bridge.summary)
+                Text("Watchdog: " + if (bridge.watchdogEnabled) "✓ monitoring" else "Off")
+                Text("Bridge state: " + bridge.summary)
                 Text("Heartbeat failures: " + bridge.consecutiveFailures)
+                Text("Recovery attempts: " + bridge.recoveryAttempts)
+                if (bridge.lastHeartbeatElapsedMs > 0L) {
+                    val ageSeconds = ((android.os.SystemClock.elapsedRealtime() - bridge.lastHeartbeatElapsedMs) / 1000L)
+                        .coerceAtLeast(0L)
+                    Text("Last heartbeat: ${ageSeconds}s ago")
+                }
                 Button(onClick = viewModel::refreshPrivilegedBridge) { Text("Refresh bridge") }
             }
         }
