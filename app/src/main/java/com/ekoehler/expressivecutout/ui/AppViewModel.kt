@@ -9,6 +9,8 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ekoehler.expressivecutout.core.DynamicTile
+import com.ekoehler.expressivecutout.core.PrivilegedBridge
+import com.ekoehler.expressivecutout.core.PrivilegedBridgeState
 import com.ekoehler.expressivecutout.core.SystemEventType
 import com.ekoehler.expressivecutout.core.stateFamily
 import com.ekoehler.expressivecutout.data.ActionButtonAlignment
@@ -21,6 +23,7 @@ import com.ekoehler.expressivecutout.data.AppPreferences
 import com.ekoehler.expressivecutout.data.AppearancePreferences
 import com.ekoehler.expressivecutout.data.AppearanceSettings
 import com.ekoehler.expressivecutout.data.ReplyInputStyle
+import com.ekoehler.expressivecutout.data.RootMode
 import com.ekoehler.expressivecutout.data.SentAlignment
 import com.ekoehler.expressivecutout.data.AssistantTilePreferences
 import com.ekoehler.expressivecutout.data.AssistantTileSettings
@@ -62,6 +65,8 @@ import com.ekoehler.expressivecutout.data.ThemePreferences
 import com.ekoehler.expressivecutout.ui.theme.AppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -225,6 +230,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val themeAccent: StateFlow<Long> = themePreferences.accent.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L,
     )
+
+    private val _privilegedBridgeState = MutableStateFlow(PrivilegedBridgeState())
+    val privilegedBridgeState = _privilegedBridgeState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            behaviourPreferences.settings.collect { settings ->
+                _privilegedBridgeState.value = PrivilegedBridge.probe(settings.rootMode)
+            }
+        }
+    }
 
     val behaviour: StateFlow<BehaviourSettings> =
         behaviourPreferences.settings.stateIn(
@@ -600,6 +616,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         behaviourPreferences.setCameraRingMode(1)
         appearancePreferences.setShadowEnabled(true)
         appearancePreferences.setPreferDynamicIconColor(true)
+    }
+
+    fun setRootMode(mode: RootMode) = viewModelScope.launch {
+        behaviourPreferences.setRootMode(mode)
+        _privilegedBridgeState.value = PrivilegedBridge.probe(mode)
+    }
+
+    fun refreshPrivilegedBridge() = viewModelScope.launch {
+        _privilegedBridgeState.value = PrivilegedBridge.probe(behaviour.value.rootMode)
     }
 
     fun setD2Enabled(value: Boolean) = viewModelScope.launch { behaviourPreferences.setD2Enabled(value) }
