@@ -9,6 +9,7 @@ import com.ekoehler.expressivecutout.core.ForegroundAppBus
 import com.ekoehler.expressivecutout.core.IslandEventBus
 import com.ekoehler.expressivecutout.events.MediaPlaybackMonitor
 import com.ekoehler.expressivecutout.events.SystemEventMonitor
+import com.ekoehler.expressivecutout.system.CameraUsageMonitor
 import com.ekoehler.expressivecutout.overlay.IslandOverlayController
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,7 @@ class CutoutAccessibilityService : AccessibilityService() {
     private var overlay: IslandOverlayController? = null
     private var systemEvents: SystemEventMonitor? = null
     private var mediaPlayback: MediaPlaybackMonitor? = null
+    private var cameraUsage: CameraUsageMonitor? = null
     private var lastAssistantKey: String? = null
 
     /**
@@ -37,6 +39,7 @@ class CutoutAccessibilityService : AccessibilityService() {
         overlay = IslandOverlayController(this).also { it.start() }
         systemEvents = SystemEventMonitor(this).also { it.start() }
         mediaPlayback = MediaPlaybackMonitor(this).also { it.start() }
+        cameraUsage = CameraUsageMonitor(this).also { it.start() }
         instance = this
         _bound.value = true
     }
@@ -200,6 +203,8 @@ class CutoutAccessibilityService : AccessibilityService() {
         instance = null
         mediaPlayback?.stop()
         mediaPlayback = null
+        cameraUsage?.stop()
+        cameraUsage = null
         systemEvents?.stop()
         systemEvents = null
         overlay?.stop()
