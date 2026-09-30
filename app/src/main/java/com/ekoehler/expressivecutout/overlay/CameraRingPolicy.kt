@@ -10,7 +10,11 @@ internal fun IslandEvent.shouldLightCameraRing(settings: BehaviourSettings): Boo
     media != null || assistant != null -> false
     isSilent -> false
     progressData != null -> settings.cameraRingProgress && !progressData.isComplete
-    liveNotificationTile != null || liveDeviceTile != null -> false
+    // Live notification tiles are still real notification alerts. Treating them as a quiet
+    // system tile meant many Samsung/Android 17 notifications never reached the ring even though
+    // the notification ring toggle was enabled.
+    liveNotificationTile != null -> settings.cameraRingNotifications
+    liveDeviceTile != null -> false
     notificationKey != null -> settings.cameraRingNotifications
     else -> false
 }
