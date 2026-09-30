@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Terminal
+import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.Card
@@ -88,6 +89,7 @@ fun SettingsTab(
     onOpenBackground: () -> Unit,
     onOpenActionButtons: () -> Unit,
     onOpenShizuku: () -> Unit,
+    onOpenRootBridge: () -> Unit,
     onOpenPermissionDot: () -> Unit,
     onOpenEventIcons: () -> Unit,
     onOpenEvent: (SystemEventType) -> Unit,
@@ -150,6 +152,7 @@ fun SettingsTab(
                     onOpenAnimation = onOpenAnimation,
                     onOpenAppearance = onOpenAppearance,
                     onOpenShizuku = onOpenShizuku,
+                    onOpenRootBridge = onOpenRootBridge,
                     onOpenEventIcons = onOpenEventIcons,
                 )
             }
@@ -168,6 +171,7 @@ fun SettingsTab(
             SettingsRoute.Background -> BackgroundScreen(viewModel, contentPadding)
             SettingsRoute.ActionButtons -> ButtonScreen(viewModel, contentPadding)
             SettingsRoute.Shizuku -> ShizukuScreen(viewModel, contentPadding, onOpenPermissionDot)
+            SettingsRoute.RootBridge -> RootBridgeScreen(viewModel, contentPadding)
             SettingsRoute.PermissionDot -> PermissionDotScreen(viewModel, contentPadding)
             SettingsRoute.EventIcons -> EventIconsScreen(viewModel, contentPadding, onOpenEvent)
             SettingsRoute.EventDetail ->
@@ -178,7 +182,7 @@ fun SettingsTab(
 
 /** The screens reachable from the Settings tab. Hoisted to MainScreen so the bottom bar can
  *  switch to a back pill on the detail screens. */
-enum class SettingsRoute { List, SizePosition, DynamicTiles, GalaxyAi, DynamicTileDetail, Apps, Behaviour, ShowsWhenEmpty, Animation, Appearance, Background, ActionButtons, Shizuku, PermissionDot, EventIcons, EventDetail }
+enum class SettingsRoute { List, SizePosition, DynamicTiles, GalaxyAi, DynamicTileDetail, Apps, Behaviour, ShowsWhenEmpty, Animation, Appearance, Background, ActionButtons, Shizuku, RootBridge, PermissionDot, EventIcons, EventDetail }
 
 /**
  * The screen that back navigation returns to. Most detail screens go straight back to the list,
@@ -217,6 +221,7 @@ private fun SettingsList(
     onOpenAnimation: () -> Unit,
     onOpenAppearance: () -> Unit,
     onOpenShizuku: () -> Unit,
+    onOpenRootBridge: () -> Unit,
     onOpenEventIcons: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -326,6 +331,12 @@ private fun SettingsList(
                 title = stringResource(R.string.shizuku_options_title),
                 subtitle = stringResource(R.string.settings_shizuku_subtitle),
                 onClick = onOpenShizuku,
+            )
+            SettingsListItem(
+                icon = Icons.Rounded.Security,
+                title = "Root & System Bridge",
+                subtitle = "Root mode, watchdog, fallback and SystemUI bridge status",
+                onClick = onOpenRootBridge,
             )
         }
 
