@@ -633,4 +633,17 @@
     <string name="tile_network_other">Network connected</string>
     <string name="tile_network_offline">Offline</string>
     <string name="tile_audio_connected">Bluetooth audio connected</string>
+
+    <string name="status_bar_replacement_title">Galaxy status bar replacement</string>
+    <string name="status_bar_replacement_desc">Draw Galaxy Island status indicators while keeping SystemUI ownership and touch behavior intact.</string>
+    <string name="status_bar_replacement_notifications_title">Notification indicators</string>
+    <string name="status_bar_replacement_notifications_desc">Show notification status indicators in the Galaxy replacement row.</string>
+    <string name="status_bar_replacement_cellular_title">Cellular status</string>
+    <string name="status_bar_replacement_cellular_desc">Show cellular signal and connection state.</string>
+    <string name="status_bar_replacement_wifi_title">Wi-Fi status</string>
+    <string name="status_bar_replacement_wifi_desc">Show Wi-Fi connection state and signal.</string>
+    <string name="status_bar_replacement_battery_title">Battery status</string>
+    <string name="status_bar_replacement_battery_desc">Show battery level and charging state.</string>
+    <string name="status_bar_replacement_connectivity_title">Connectivity indicators</string>
+    <string name="status_bar_replacement_connectivity_desc">Show active connectivity and transport indicators.</string>
 </resources>
