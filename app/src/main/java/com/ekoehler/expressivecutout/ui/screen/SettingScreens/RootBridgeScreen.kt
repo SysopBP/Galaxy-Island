@@ -22,13 +22,32 @@ fun RootBridgeScreen(viewModel: AppViewModel, contentPadding: PaddingValues) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("Root & System Bridge", style = MaterialTheme.typography.headlineMedium)
-        BehaviourSegmentedRow(
+        Card(
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
-            label = "Root mode",
-            options = listOf("Off", "Automatic", "Enhanced"),
-            selectedIndex = behaviour.rootMode.ordinal,
-            onSelect = { viewModel.setRootMode(RootMode.entries[it]) },
-        )
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Root mode", style = MaterialTheme.typography.titleMedium)
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    RootMode.entries.forEachIndexed { index, mode ->
+                        SegmentedButton(
+                            selected = behaviour.rootMode == mode,
+                            onClick = { viewModel.setRootMode(mode) },
+                            shape = SegmentedButtonDefaults.itemShape(index, RootMode.entries.size),
+                        ) {
+                            Text(
+                                when (mode) {
+                                    RootMode.OFF -> "Off"
+                                    RootMode.AUTOMATIC -> "Automatic"
+                                    RootMode.ENHANCED -> "Enhanced"
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
         Card(modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
