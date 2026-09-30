@@ -1105,7 +1105,11 @@ fun DynamicIsland(
             }
         }
 
+        // Use the currently shown event as well as the live slot. Test events can be promoted,
+        // auto-expanded, or briefly cleared by the controller while their UI is still on screen.
+        // Rendering the ring from only `event` made the pill react but left no eligible ring event.
         val ringEvent = event?.takeIf { it.shouldLightCameraRing(ringSettings) }
+            ?: shownEvent?.takeIf { it.shouldLightCameraRing(ringSettings) }
             ?: satellite?.takeIf { it.shouldLightCameraRing(ringSettings) }
         // Start the ring's alert window when an eligible event actually reaches the overlay.
         // Real framework notifications can spend time in listener/classifier/slot routing before
