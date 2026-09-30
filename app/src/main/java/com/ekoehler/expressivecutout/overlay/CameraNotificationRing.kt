@@ -28,7 +28,7 @@ internal fun CameraNotificationRing(settings: BehaviourSettings, accent: Color, 
         val transition = rememberInfiniteTransition(label = "cameraRing")
         val value by transition.animateFloat(
             initialValue = 0f, targetValue = 1f,
-            animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart),
+            animationSpec = infiniteRepeatable(tween(820, easing = LinearEasing), RepeatMode.Restart),
             label = "cameraRingPhase",
         )
         value
@@ -50,10 +50,19 @@ internal fun CameraNotificationRing(settings: BehaviourSettings, accent: Color, 
     Canvas(modifier.size(settings.cameraRingDiameter.dp)) {
         val width = settings.cameraRingThickness.dp.toPx()
         val radius = ((size.minDimension - width) / 2f).coerceAtLeast(0f)
-        val pulse = if (settings.cameraRingMode == 1) 0.3f + 0.7f *
-            ((kotlin.math.sin(phase * 2f * Math.PI).toFloat() + 1f) / 2f) else 1f
+        val wave = ((kotlin.math.sin(phase * 2f * Math.PI).toFloat() + 1f) / 2f)
+        val pulse = if (settings.cameraRingMode == 1) 0.18f + 0.82f * wave else 1f
         val brightness = settings.cameraRingBrightness / 100f
         val ink = color.copy(alpha = brightness * pulse)
+        // Animated modes get a breathing outer halo. This is drawing-only: it never requests
+        // focus or launches a window, so D2 can safely yield to the system call UI.
+        if (settings.cameraRingMode != 0) {
+            drawCircle(
+                color.copy(alpha = brightness * (0.10f + 0.18f * wave)),
+                radius = (radius + width * (0.35f + 0.30f * wave)).coerceAtLeast(radius),
+                style = Stroke((width * (0.55f + 0.30f * wave)).coerceAtLeast(1f)),
+            )
+        }
         if (settings.cameraRingMode == 3) {
             val sheen = if (settings.cameraRingColor == 11) Color(0xFFDBE3EE) else color
             drawCircle(Color(0xFF14181E).copy(alpha = brightness * 0.9f), radius, style = Stroke(width))
@@ -72,11 +81,24 @@ internal fun CameraNotificationRing(settings: BehaviourSettings, accent: Color, 
             }
         } else if (settings.cameraRingMode == 2) {
             drawCircle(ink.copy(alpha = ink.alpha * 0.2f), radius, style = Stroke(width))
-            drawArc(ink, phase * 360f - 90f, 100f, false,
+            drawArc(ink, phase * 360f - 90f, 118f, false,
                 topLeft = Offset(width / 2f, width / 2f),
                 size = Size(radius * 2f, radius * 2f), style = Stroke(width, cap = StrokeCap.Round))
+            drawArc(ink.copy(alpha = ink.alpha * 0.48f), -phase * 360f + 90f, 58f, false,
+                topLeft = Offset(width / 2f, width / 2f),
+                size = Size(radius * 2f, radius * 2f),
+                style = Stroke((width * 0.72f).coerceAtLeast(1f), cap = StrokeCap.Round))
         } else {
             drawCircle(ink, radius, style = Stroke(width))
+            if (settings.cameraRingMode == 1) {
+                drawArc(
+                    Color.White.copy(alpha = brightness * (0.22f + 0.55f * wave)),
+                    phase * 360f - 90f, 42f, false,
+                    topLeft = Offset(width / 2f, width / 2f),
+                    size = Size(radius * 2f, radius * 2f),
+                    style = Stroke((width * 0.68f).coerceAtLeast(1f), cap = StrokeCap.Round),
+                )
+            }
         }
     }
 }
