@@ -1,6 +1,9 @@
 package com.ekoehler.expressivecutout.xposed
 
 import android.util.Log
+import android.content.Context
+import android.content.Intent
+import android.os.SystemClock
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
@@ -16,6 +19,9 @@ class GalaxyIslandXposedBridge : XposedModule() {
     companion object {
         private const val TAG = "GalaxyIslandXposed"
         private const val SYSTEM_UI = "com.android.systemui"
+        private const val ACTION_BRIDGE_STATE = "app.cutout.ringpreview.SYSTEMUI_BRIDGE_STATE"
+        private const val EXTRA_ACTIVE = "active"
+        private const val EXTRA_HEARTBEAT = "heartbeat_elapsed"
     }
 
     override fun onModuleLoaded(param: ModuleLoadedParam) {
@@ -26,6 +32,7 @@ class GalaxyIslandXposedBridge : XposedModule() {
         if (param.packageName != SYSTEM_UI) return
         log(Log.INFO, TAG, "GALAXY_ISLAND_XPOSED_SYSTEMUI_READY")
         installProbes(param.classLoader)
+        installBridgeHeartbeat(param.classLoader)
     }
 
     private fun installProbes(loader: ClassLoader) {
@@ -54,6 +61,39 @@ class GalaxyIslandXposedBridge : XposedModule() {
             )
         )
         groups.forEach { (event, targets) -> installNamedProbes(loader, event, targets) }
+    }
+
+
+    /**
+     * Publishes a lightweight heartbeat from the injected SystemUI process. The app uses this
+     * signal only as bridge health; no SystemUI object is exported across the process boundary.
+     */
+    private fun installBridgeHeartbeat(loader: ClassLoader) {
+        val appClass = runCatching {
+            Class.forName("com.android.systemui.SystemUIApplication", false, loader)
+        }.getOrNull() ?: return
+
+        appClass.declaredMethods.filter { it.name == "onCreate" }.forEach { method ->
+            runCatching {
+                method.isAccessible = true
+                hook(method)
+                    .setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE)
+                    .intercept { chain ->
+                        val result = chain.proceed()
+                        val context = chain.thisObject as? Context
+                        context?.sendBroadcast(
+                            Intent(ACTION_BRIDGE_STATE)
+                                .setPackage("app.cutout.ringpreview")
+                                .putExtra(EXTRA_ACTIVE, true)
+                                .putExtra(EXTRA_HEARTBEAT, SystemClock.elapsedRealtime())
+                        )
+                        log(Log.INFO, TAG, "GALAXY_ISLAND_SYSTEMUI_BRIDGE_INJECTED")
+                        result
+                    }
+            }.onFailure {
+                log(Log.WARN, TAG, "GALAXY_ISLAND_SYSTEMUI_BRIDGE_INJECT_FAILED", it)
+            }
+        }
     }
 
     private fun installNamedProbes(loader: ClassLoader, event: String, targets: List<Pair<String, List<String>>>) {
