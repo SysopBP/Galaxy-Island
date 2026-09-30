@@ -32,10 +32,13 @@ class CameraRingPolicyTest {
             .shouldLightCameraRing(settings.copy(cameraRingProgress = true)))
     }
 
-    /** Navigation must not fall through to the ordinary-notification ring rule. */
-    @Test fun ongoingNavigationStaysQuiet() {
-        assertFalse(event().copy(liveNotificationTile = DynamicTile.NAVIGATION)
-            .shouldLightCameraRing(BehaviourSettings(cameraRingEnabled = true)))
+    /** Live notification tiles use the notification ring preference just like normal alerts. */
+    @Test fun liveNotificationTileUsesNotificationPreference() {
+        val live = event().copy(liveNotificationTile = DynamicTile.NAVIGATION)
+        assertTrue(live.shouldLightCameraRing(BehaviourSettings(cameraRingEnabled = true)))
+        assertFalse(live.shouldLightCameraRing(
+            BehaviourSettings(cameraRingEnabled = true, cameraRingNotifications = false)
+        ))
     }
 
     /** Device status must never keep the notification ring running. */
