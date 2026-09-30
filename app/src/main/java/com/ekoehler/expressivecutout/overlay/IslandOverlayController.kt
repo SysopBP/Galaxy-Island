@@ -712,6 +712,7 @@ class IslandOverlayController(private val context: Context) {
                 val rotation by rotationState.collectAsStateWithLifecycle()
                 val snapGeometry by rotationSnapState.collectAsStateWithLifecycle()
                 val permissionUsage by PermissionUsageMonitor.usage.collectAsStateWithLifecycle()
+                val cameraActive by CameraUsageMonitor.active.collectAsStateWithLifecycle()
                 val permissionDotsEnabled by permissionDotEnabledState.collectAsStateWithLifecycle()
                 val permissionDotPosition by permissionDotPositionState.collectAsStateWithLifecycle()
                 val permissionDotColors by permissionDotColorsState.collectAsStateWithLifecycle()
