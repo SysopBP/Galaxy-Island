@@ -732,6 +732,8 @@ class IslandOverlayController(private val context: Context) {
                         event = event,
                         ringSettings = behaviour,
                         ringAllowed = awake && orientation != Configuration.ORIENTATION_LANDSCAPE,
+                        cameraCenterXDp = composeView?.let { com.ekoehler.expressivecutout.core.CutoutMetrics.cutoutCenterPx(it)?.x?.div(density) },
+                        cameraCenterYDp = composeView?.let { com.ekoehler.expressivecutout.core.CutoutMetrics.cutoutCenterPx(it)?.y?.div(density) },
 
                         collapsed = layout.collapsed,
                         expanded = layout.expanded,
