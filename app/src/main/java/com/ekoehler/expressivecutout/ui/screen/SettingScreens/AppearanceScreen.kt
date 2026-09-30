@@ -84,6 +84,7 @@ import com.ekoehler.expressivecutout.data.AppearanceSettings
 import com.ekoehler.expressivecutout.data.CutoutColor
 import com.ekoehler.expressivecutout.data.DynamicRole
 import com.ekoehler.expressivecutout.data.GlassStyle
+import com.ekoehler.expressivecutout.data.TransparentPillStyle
 import com.ekoehler.expressivecutout.overlay.IslandEvent
 import com.ekoehler.expressivecutout.overlay.IslandIcon
 import com.ekoehler.expressivecutout.overlay.resolve
@@ -122,6 +123,46 @@ internal fun AppearanceScreen(
             checked = appearance.transparentPill,
             onCheckedChange = viewModel::setTransparentPill,
         )
+
+        AnimatedVisibility(visible = appearance.transparentPill) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Transparent pill mode", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Choose how the transparent collapsed pill handles tint, frost and its glass edge.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    val transparentLabels = mapOf(
+                        TransparentPillStyle.PURE to "Pure Transparent",
+                        TransparentPillStyle.GLASS to "Clear Glass",
+                        TransparentPillStyle.FROSTED to "Frosted Transparent",
+                        TransparentPillStyle.SOFT_FROST to "Soft Frost",
+                        TransparentPillStyle.SMOKE to "Smoke Glass",
+                        TransparentPillStyle.AMOLED to "AMOLED Glass",
+                        TransparentPillStyle.CRYSTAL to "Crystal Glass",
+                        TransparentPillStyle.EDGE_ONLY to "Glass Edge Only",
+                    )
+                    transparentLabels.forEach { (style, label) ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(if (appearance.transparentPillStyle == style) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                                .clickable { viewModel.setTransparentPillStyle(style) }
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(label, modifier = Modifier.weight(1f))
+                            if (appearance.transparentPillStyle == style) Icon(Icons.Rounded.Check, contentDescription = null)
+                        }
+                    }
+                }
+            }
+        }
 
         SettingsToggleCard(
             shape = RoundedCornerShape(24.dp),
