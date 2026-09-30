@@ -685,6 +685,10 @@ class IslandOverlayController(private val context: Context) {
      */
     private fun addOverlay() {
         val view = ComposeView(context).apply {
+            // Keep the host window fully transparent. Only DynamicIsland should paint pixels;
+            // otherwise the host bounds can appear as a dark rectangle around the pill.
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            background = null
             setViewTreeLifecycleOwner(lifecycleOwner)
             setViewTreeViewModelStoreOwner(lifecycleOwner)
             setViewTreeSavedStateRegistryOwner(lifecycleOwner)
@@ -2735,6 +2739,9 @@ class IslandOverlayController(private val context: Context) {
         ).apply {
             gravity = computeWindowGravity()
             y = computeWindowOffsetY()
+            // Never dim the wallpaper/app behind the Island host window.
+            flags = flags and WindowManager.LayoutParams.FLAG_DIM_BEHIND.inv()
+            dimAmount = 0f
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 layoutInDisplayCutoutMode =
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
