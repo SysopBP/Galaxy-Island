@@ -1156,6 +1156,7 @@ fun DynamicIsland(
             val ringDiameter = ringSettings.cameraRingDiameter.coerceAtMost(collapsed.heightDp)
             val source = when {
                 cameraRingActive -> "camera"
+                microphoneRingActive -> "microphone"
                 callRingActive -> "call:${ringEvent?.id}"
                 else -> "event:${ringEvent?.id}"
             }
