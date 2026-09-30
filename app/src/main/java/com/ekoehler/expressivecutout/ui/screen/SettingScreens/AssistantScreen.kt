@@ -36,6 +36,7 @@ internal fun AssistantScreen(
     contentPadding: PaddingValues,
 ) {
     val settings by viewModel.assistantTile.collectAsStateWithLifecycle()
+    val ai by viewModel.aiSettings.collectAsStateWithLifecycle()
     val context = androidx.compose.ui.platform.LocalContext.current
     var chooseApp by remember { androidx.compose.runtime.mutableStateOf(false) }
     if (chooseApp) AppPickerSheet(onPick = {
