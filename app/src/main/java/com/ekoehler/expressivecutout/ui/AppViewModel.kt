@@ -625,6 +625,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         behaviourPreferences.setCameraRingEnabled(value)
     }
 
+    fun setCameraRingNotifications(value: Boolean) = viewModelScope.launch {
+        behaviourPreferences.setCameraRingNotifications(value)
+    }
+
+    fun setCameraRingCalls(value: Boolean) = viewModelScope.launch {
+        behaviourPreferences.setCameraRingCalls(value)
+    }
+
+    fun setCameraRingTimers(value: Boolean) = viewModelScope.launch {
+        behaviourPreferences.setCameraRingTimers(value)
+    }
+
+    fun setCameraRingProgress(value: Boolean) = viewModelScope.launch {
+        behaviourPreferences.setCameraRingProgress(value)
+    }
+
     fun setCameraRingMode(value: Int) = viewModelScope.launch {
         behaviourPreferences.setCameraRingMode(value)
     }
