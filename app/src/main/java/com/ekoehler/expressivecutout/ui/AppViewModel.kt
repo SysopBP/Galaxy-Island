@@ -71,6 +71,8 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
@@ -233,12 +235,26 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     )
 
     private val _privilegedBridgeState = MutableStateFlow(PrivilegedBridgeState())
+    private var bridgeWatchdogJob: Job? = null
     val privilegedBridgeState = _privilegedBridgeState.asStateFlow()
 
     init {
         viewModelScope.launch {
             behaviourPreferences.settings.collect { settings ->
-                _privilegedBridgeState.value = PrivilegedBridge.probe(settings.rootMode)
+                startBridgeWatchdog(settings.rootMode)
+            }
+        }
+    }
+
+    private fun startBridgeWatchdog(mode: RootMode) {
+        bridgeWatchdogJob?.cancel()
+        bridgeWatchdogJob = viewModelScope.launch {
+            var state = PrivilegedBridge.probe(mode, _privilegedBridgeState.value)
+            _privilegedBridgeState.value = state
+            while (mode != RootMode.OFF) {
+                delay(PrivilegedBridge.heartbeatDelayMs(state))
+                state = PrivilegedBridge.probe(mode, state)
+                _privilegedBridgeState.value = state
             }
         }
     }
@@ -621,11 +637,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setRootMode(mode: RootMode) = viewModelScope.launch {
         behaviourPreferences.setRootMode(mode)
-        _privilegedBridgeState.value = PrivilegedBridge.probe(mode)
+        _privilegedBridgeState.value = PrivilegedBridge.probe(mode, _privilegedBridgeState.value)
     }
 
     fun refreshPrivilegedBridge() = viewModelScope.launch {
-        _privilegedBridgeState.value = PrivilegedBridge.probe(behaviour.value.rootMode)
+        _privilegedBridgeState.value = PrivilegedBridge.probe(behaviour.value.rootMode, _privilegedBridgeState.value)
     }
 
     fun setD2Enabled(value: Boolean) = viewModelScope.launch { behaviourPreferences.setD2Enabled(value) }
