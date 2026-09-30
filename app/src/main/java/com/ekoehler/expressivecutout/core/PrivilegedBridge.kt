@@ -1,5 +1,6 @@
 package com.ekoehler.expressivecutout.core
 
+import com.ekoehler.expressivecutout.data.RootMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
@@ -10,8 +11,6 @@ import java.util.concurrent.TimeUnit
  * Root is never required for Galaxy Island startup. Every probe is bounded and failures resolve
  * to an unavailable capability so the normal Android/Shizuku paths remain usable after a reboot.
  */
-enum class RootMode { OFF, AUTOMATIC, ENHANCED }
-
 data class PrivilegedBridgeState(
     val mode: RootMode = RootMode.AUTOMATIC,
     val rootAvailable: Boolean = false,
