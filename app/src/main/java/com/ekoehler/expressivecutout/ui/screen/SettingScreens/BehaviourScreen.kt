@@ -32,6 +32,7 @@ import androidx.core.view.HapticFeedbackConstantsCompat
 import com.ekoehler.expressivecutout.R
 import com.ekoehler.expressivecutout.data.BehaviourSettings
 import com.ekoehler.expressivecutout.data.HorizontalCutoutMode
+import com.ekoehler.expressivecutout.data.RootMode
 import com.ekoehler.expressivecutout.data.SatellitePosition
 import com.ekoehler.expressivecutout.data.SwipeDismissDirection
 import com.ekoehler.expressivecutout.data.SwipeDismissTarget
@@ -75,6 +76,7 @@ internal fun BehaviourScreen(
     onOpenShowsWhenEmpty: () -> Unit,
 ) {
     val behaviour by viewModel.behaviour.collectAsStateWithLifecycle()
+    val bridge by viewModel.privilegedBridgeState.collectAsStateWithLifecycle()
     var normalSeconds by remember(behaviour.normalDurationSeconds) {
         mutableStateOf(behaviour.normalDurationSeconds.toFloat())
     }
@@ -99,6 +101,31 @@ internal fun BehaviourScreen(
             description = "Install the paired D2 build and enable Connect Galaxy Island in its PIN-protected settings. The island hides while D2 is locked or disconnected. Enable Show when empty for an always-available lock target.",
             checked = behaviour.d2Enabled, onCheckedChange = viewModel::setD2Enabled,
         )
+        Text("Root enhancements", style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(16.dp))
+        BehaviourSegmentedRow(
+            shape = groupedShape(true, true), label = "Root mode",
+            options = listOf("Off", "Automatic", "Enhanced"),
+            selectedIndex = behaviour.rootMode.ordinal,
+            onSelect = { viewModel.setRootMode(RootMode.entries[it]) },
+        )
+        Card(
+            modifier = Modifier.fillMaxWidth(), shape = groupedShape(true, true),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Privileged bridge", style = MaterialTheme.typography.titleMedium)
+                Text(if (bridge.rootAvailable) "Root ✓ available" else "Root • unavailable")
+                Text(if (bridge.rootBridgeActive) "Root bridge ✓ active" else "Root bridge • fallback")
+                Text(if (bridge.systemUiBridgeAvailable) "SystemUI bridge ✓ active" else "SystemUI bridge • not injected")
+                Text(bridge.summary, style = MaterialTheme.typography.bodySmall)
+                androidx.compose.material3.TextButton(onClick = viewModel::refreshPrivilegedBridge) {
+                    Text("Refresh bridge")
+                }
+            }
+        }
+        Text("Automatic uses root when it is available and falls back to normal Android/Shizuku paths after a reboot without root. Enhanced requests the privileged bridge but never blocks Galaxy Island startup.",
+            style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp))
         Text("Camera ring & persistent alerts", style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(16.dp))
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
