@@ -83,6 +83,7 @@ import com.ekoehler.expressivecutout.core.IslandPreviewBus
 import com.ekoehler.expressivecutout.data.AppearanceSettings
 import com.ekoehler.expressivecutout.data.CutoutColor
 import com.ekoehler.expressivecutout.data.DynamicRole
+import com.ekoehler.expressivecutout.data.GlassStyle
 import com.ekoehler.expressivecutout.overlay.IslandEvent
 import com.ekoehler.expressivecutout.overlay.IslandIcon
 import com.ekoehler.expressivecutout.overlay.resolve
@@ -129,6 +130,59 @@ internal fun AppearanceScreen(
             checked = appearance.glassEnabled,
             onCheckedChange = viewModel::setGlassEnabled,
         )
+
+        AnimatedVisibility(visible = appearance.glassEnabled) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text("Pill glass mode", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Choose the glass/frost character used by the collapsed pill and expanded surface.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    val labels = mapOf(
+                        GlassStyle.STANDARD to "Standard",
+                        GlassStyle.FROSTED to "Frosted",
+                        GlassStyle.DEEP_FROST to "Deep Frost",
+                        GlassStyle.CLEAR_GLASS to "Clear Glass",
+                        GlassStyle.BLACK_FROST to "Black Frost",
+                        GlassStyle.SOFT_FROST to "Soft Frost",
+                        GlassStyle.HEAVY_FROST to "Heavy Frost",
+                        GlassStyle.SMOKE_FROST to "Smoke Frost",
+                        GlassStyle.AMOLED_FROST to "AMOLED Frost",
+                        GlassStyle.CRYSTAL_FROST to "Crystal Frost",
+                        GlassStyle.SILVER_FROST to "Silver Frost",
+                    )
+                    labels.forEach { (style, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(
+                                    if (appearance.glassStyle == style)
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    else Color.Transparent
+                                )
+                                .clickable { viewModel.setGlassStyle(style) }
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(label, modifier = Modifier.weight(1f))
+                            if (appearance.glassStyle == style) {
+                                Icon(Icons.Rounded.Check, contentDescription = null)
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         SettingsToggleCard(
             shape = RoundedCornerShape(24.dp),
