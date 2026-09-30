@@ -1264,7 +1264,10 @@ internal fun IslandSurface(
         shape = shape,
         color = currentBaseColor,
         contentColor = contentColor,
-        shadowElevation = if (appearance.glassEnabled) (12.dp + (progress * 6f).dp) else if (appearance.shadowEnabled) 6.dp else 0.dp,
+        // Glass adds material/highlights only; elevation is owned exclusively by Shadow.
+        shadowElevation = if (appearance.shadowEnabled) {
+            if (appearance.glassEnabled) (12.dp + (progress * 6f).dp) else 6.dp
+        } else 0.dp,
         tonalElevation = 0.dp,
         border = border,
     ) {
@@ -1298,12 +1301,15 @@ internal fun IslandSurface(
                         .graphicsLayer { alpha = glassOverlayAlpha * 0.70f }
                         .background(GalaxyGlassInnerHighlight),
                 )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer { alpha = glassOverlayAlpha }
-                        .border(0.75.dp, GalaxyGlassEdge, shape),
-                )
+                // The glass edge is an outline, so honor the Stroke switch here too.
+                if (appearance.strokeEnabled) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { alpha = glassOverlayAlpha }
+                            .border(0.75.dp, GalaxyGlassEdge, shape),
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1337,12 +1343,14 @@ internal fun IslandSurface(
                             .graphicsLayer { alpha = popoutAlpha * 0.80f }
                             .background(GalaxyGlassPopoutShade),
                     )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer { alpha = popoutAlpha * 0.85f }
-                            .border(1.dp, GalaxyGlassEdge.copy(alpha = 0.34f), shape),
-                    )
+                    if (appearance.strokeEnabled) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer { alpha = popoutAlpha * 0.85f }
+                                .border(1.dp, GalaxyGlassEdge.copy(alpha = 0.34f), shape),
+                        )
+                    }
                 }
                 content()
             }
