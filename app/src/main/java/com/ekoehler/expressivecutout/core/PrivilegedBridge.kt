@@ -1,43 +1,67 @@
 package com.ekoehler.expressivecutout.core
 
+import android.os.SystemClock
 import com.ekoehler.expressivecutout.data.RootMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
-/**
- * Optional privileged capability bridge.
- *
- * Root is never required for Galaxy Island startup. Every probe is bounded and failures resolve
- * to an unavailable capability so the normal Android/Shizuku paths remain usable after a reboot.
- */
+enum class BridgeHealth { OFF, HEALTHY, FALLBACK, RECONNECTING }
+
 data class PrivilegedBridgeState(
     val mode: RootMode = RootMode.AUTOMATIC,
     val rootAvailable: Boolean = false,
     val rootBridgeActive: Boolean = false,
     val systemUiBridgeAvailable: Boolean = false,
     val fallbackActive: Boolean = true,
+    val health: BridgeHealth = BridgeHealth.FALLBACK,
+    val lastHeartbeatElapsedMs: Long = 0L,
+    val consecutiveFailures: Int = 0,
 ) {
     val summary: String
-        get() = when {
-            mode == RootMode.OFF -> "Root enhancements off · Android fallback active"
-            rootBridgeActive -> "Root bridge active"
-            else -> "Root unavailable · Android fallback active"
+        get() = when (health) {
+            BridgeHealth.OFF -> "Root enhancements off · Android fallback active"
+            BridgeHealth.HEALTHY -> "Bridge ✓ healthy"
+            BridgeHealth.RECONNECTING -> "Bridge reconnecting… · fallback remains active"
+            BridgeHealth.FALLBACK -> "Fallback • active"
         }
 }
 
 object PrivilegedBridge {
-    suspend fun probe(mode: RootMode): PrivilegedBridgeState = withContext(Dispatchers.IO) {
-        if (mode == RootMode.OFF) return@withContext PrivilegedBridgeState(mode = mode)
+    suspend fun probe(
+        mode: RootMode,
+        previous: PrivilegedBridgeState? = null,
+    ): PrivilegedBridgeState = withContext(Dispatchers.IO) {
+        val now = SystemClock.elapsedRealtime()
+        if (mode == RootMode.OFF) {
+            return@withContext PrivilegedBridgeState(
+                mode = mode, health = BridgeHealth.OFF, lastHeartbeatElapsedMs = now,
+            )
+        }
+
         val root = hasRoot()
+        val failures = if (root) 0 else (previous?.consecutiveFailures ?: 0) + 1
         PrivilegedBridgeState(
             mode = mode,
             rootAvailable = root,
             rootBridgeActive = root,
-            // Injection into SystemUI is a separate capability; root alone must never claim it.
-            systemUiBridgeAvailable = false,
+            // Root does not imply an injected SystemUI hook.
+            systemUiBridgeAvailable = previous?.systemUiBridgeAvailable == true && root,
             fallbackActive = !root,
+            health = if (root) BridgeHealth.HEALTHY
+                else if (failures > 1) BridgeHealth.RECONNECTING else BridgeHealth.FALLBACK,
+            lastHeartbeatElapsedMs = now,
+            consecutiveFailures = failures,
         )
+    }
+
+    /** Slow heartbeat; failed probes back off so KernelSU is never hammered after boot. */
+    fun heartbeatDelayMs(state: PrivilegedBridgeState): Long = when {
+        state.mode == RootMode.OFF -> 60_000L
+        state.rootBridgeActive -> 30_000L
+        state.consecutiveFailures >= 5 -> 120_000L
+        state.consecutiveFailures >= 2 -> 60_000L
+        else -> 30_000L
     }
 
     private fun hasRoot(): Boolean = runCatching {
