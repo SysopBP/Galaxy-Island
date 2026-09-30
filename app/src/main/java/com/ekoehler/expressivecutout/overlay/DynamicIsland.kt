@@ -1105,16 +1105,22 @@ fun DynamicIsland(
 
         val ringEvent = event?.takeIf { it.shouldLightCameraRing(ringSettings) }
             ?: satellite?.takeIf { it.shouldLightCameraRing(ringSettings) }
-        val ringRemainingMs = ringEvent?.let {
-            CAMERA_RING_ALERT_DURATION_MS - ((System.nanoTime() / 1_000_000L) - it.alertStartedAtMs)
-        } ?: 0L
-        var ringExpired by remember(ringEvent?.id) { mutableStateOf(ringRemainingMs <= 0L) }
+        // Start the ring's alert window when an eligible event actually reaches the overlay.
+        // Real framework notifications can spend time in listener/classifier/slot routing before
+        // Compose sees them; aging the ring from IslandEvent creation could therefore expire the
+        // alert before its first frame. Test triggers are immediate, which hid that production bug.
+        // The event id is stable across updates of the same notification, so this still rings once
+        // per event instead of restarting for every progress/text update.
+        var ringExpired by remember(ringEvent?.id) { mutableStateOf(ringEvent == null) }
         // The camera ring is an alert independent of the pill's expanded/collapsed state.
         // Normal notifications commonly auto-expand, so tying ring lifetime to isExpanded
         // made calls (which stay collapsed) appear to be the only working ring trigger.
         LaunchedEffect(ringEvent?.id) {
             if (ringEvent != null) {
-                kotlinx.coroutines.delay(ringRemainingMs.coerceAtLeast(0L))
+                ringExpired = false
+                kotlinx.coroutines.delay(CAMERA_RING_ALERT_DURATION_MS)
+                ringExpired = true
+            } else {
                 ringExpired = true
             }
         }
