@@ -451,6 +451,7 @@ fun DynamicIsland(
     hapticsOnPop: Boolean = false,
     ringSettings: com.ekoehler.expressivecutout.data.BehaviourSettings = com.ekoehler.expressivecutout.data.BehaviourSettings(),
     ringAllowed: Boolean = true,
+    cameraActive: Boolean = false,
     cameraCenterXDp: Float? = null,
     cameraCenterYDp: Float? = null,
     permissionDotsEnabled: Boolean = false,
@@ -1140,25 +1141,30 @@ fun DynamicIsland(
                     "cameraDp=(${cameraCenterXDp},${cameraCenterYDp}) displayWidthDp=${displayWidthDp}",
             )
         }
-        if (ringAllowed && !ringExpired && ringEvent != null) {
+        // Real camera ownership is an independent ring source. Existing notification/call/timer
+        // policy remains unchanged; camera activity shares the proven renderer.
+        val cameraRingActive = ringSettings.cameraRingEnabled && cameraActive
+        val shouldMountRing = ringAllowed && (cameraRingActive || (!ringExpired && ringEvent != null))
+        LaunchedEffect(cameraActive, cameraRingActive, shouldMountRing) {
+            Log.i("GalaxyIslandCameraRing",
+                "camera-handoff active=$cameraActive enabled=${ringSettings.cameraRingEnabled} mount=$shouldMountRing")
+        }
+        if (shouldMountRing) {
             val ringDiameter = ringSettings.cameraRingDiameter.coerceAtMost(collapsed.heightDp)
-            Log.i(
-                "GalaxyIslandCameraRing",
-                "mount id=${ringEvent.id} diameterDp=${ringDiameter} " +
-                    "cameraDp=(${cameraCenterXDp},${cameraCenterYDp})",
-            )
+            val source = if (cameraRingActive) "camera" else "event:${ringEvent?.id}"
+            Log.i("GalaxyIslandCameraRing",
+                "mount source=$source diameterDp=$ringDiameter cameraDp=($cameraCenterXDp,$cameraCenterYDp)")
             val cameraX = cameraCenterXDp ?: (displayWidthDp / 2f)
             val cameraY = cameraCenterYDp ?: (collapsed.offsetYDp + collapsed.heightDp / 2f)
             CameraNotificationRing(
                 settings = ringSettings.copy(cameraRingDiameter = ringDiameter),
-                accent = ringEvent.accent,
+                accent = ringEvent?.accent ?: androidx.compose.ui.graphics.Color.White,
                 modifier = Modifier.offset(
                     x = (cameraX - ringDiameter / 2f).dp,
                     y = (cameraY - ringDiameter / 2f).dp,
                 ),
             )
         }
-
         // Placed as a sibling of the pill rather than wrapping both in a Row: the pill keeps its own
         // centred, camera-anchored offset, so it can never slide off the cutout as a bubble appears
         // or leaves. The bubble tracks the pill's animated width instead, staying glued to its edge.
