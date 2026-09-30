@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Terminal
+import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,10 +55,11 @@ import com.ekoehler.expressivecutout.system.ShizukuStatus
  * system settings screen instantly reflects the change.
  */
 @Composable
-fun PermissionsTab(contentPadding: PaddingValues) {
+fun PermissionsTab(contentPadding: PaddingValues, viewModel: com.ekoehler.expressivecutout.ui.AppViewModel? = null) {
     val context = LocalContext.current
     val status = rememberPermissionStatus()
     val shizuku by ShizukuState.status.collectAsStateWithLifecycle()
+    val bridge = viewModel?.privilegedBridgeState?.collectAsStateWithLifecycle()?.value
 
     // Shizuku can be started while we're backgrounded, and returning here is the natural moment to
     // notice, so re-read on resume alongside the grants rememberPermissionStatus already refreshes.
@@ -119,7 +121,14 @@ fun PermissionsTab(contentPadding: PaddingValues) {
                     else Permissions.openShizuku(context)
                 },
             )
-        }
+
+            PermissionCard(
+                icon = Icons.Rounded.Security,
+                title = "Root access",
+                description = if (bridge?.rootAvailable == true) "Root bridge available · watchdog active" else "Optional · normal Android/Shizuku fallback remains active",
+                granted = bridge?.rootAvailable == true,
+                onClick = { viewModel?.refreshPrivilegedBridge() },
+            )        }
     }
 }
 
