@@ -53,6 +53,7 @@ object PrivilegedBridge {
         }
 
         val root = hasRoot()
+        val systemUiAlive = isSystemUiBridgeAlive(now)
         val failures = if (root) 0 else (previous?.consecutiveFailures ?: 0) + 1
         val wasActive = previous?.rootBridgeActive == true
         val recoveryAttempts = if (root) 0 else (previous?.recoveryAttempts ?: 0) +
@@ -62,9 +63,10 @@ object PrivilegedBridge {
             rootAvailable = root,
             rootBridgeActive = root,
             // Root does not imply an injected SystemUI hook.
-            systemUiBridgeAvailable = isSystemUiBridgeAlive(now),
+            systemUiBridgeAvailable = systemUiAlive,
             fallbackActive = !root,
             health = when {
+                mode == RootMode.ENHANCED && root && !systemUiAlive -> BridgeHealth.DEGRADED
                 root -> BridgeHealth.HEALTHY
                 failures >= 5 -> BridgeHealth.DEGRADED
                 failures > 1 -> BridgeHealth.RECONNECTING
