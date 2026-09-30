@@ -1125,7 +1125,10 @@ fun DynamicIsland(
         // The camera ring is an alert independent of the pill's expanded/collapsed state.
         // Normal notifications commonly auto-expand, so tying ring lifetime to isExpanded
         // made calls (which stay collapsed) appear to be the only working ring trigger.
-        LaunchedEffect(ringEvent?.id) {
+        // Opening or closing an eligible notification card counts as fresh visual activity.
+        // Including isExpanded in the key restarts the alert window when the user expands a card,
+        // instead of letting the original post-time window expire while the card is still in use.
+        LaunchedEffect(ringEvent?.id, isExpanded) {
             if (ringEvent != null) {
                 ringExpired = false
                 kotlinx.coroutines.delay(CAMERA_RING_ALERT_DURATION_MS)
@@ -1151,7 +1154,11 @@ fun DynamicIsland(
         }
         if (shouldMountRing) {
             val ringDiameter = ringSettings.cameraRingDiameter.coerceAtMost(collapsed.heightDp)
-            val source = if (cameraRingActive) "camera" else "event:${ringEvent?.id}"
+            val source = when {
+                cameraRingActive -> "camera"
+                callRingActive -> "call:${ringEvent?.id}"
+                else -> "event:${ringEvent?.id}"
+            }
             Log.i("GalaxyIslandCameraRing",
                 "mount source=$source diameterDp=$ringDiameter cameraDp=($cameraCenterXDp,$cameraCenterYDp)")
             val cameraX = cameraCenterXDp ?: (displayWidthDp / 2f)
