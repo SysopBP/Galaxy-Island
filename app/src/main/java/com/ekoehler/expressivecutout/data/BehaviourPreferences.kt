@@ -84,6 +84,8 @@ data class BehaviourSettings(
     val cameraRingProgress: Boolean = false,
     val cameraRingMode: Int = 1,
     val cameraRingDiameter: Int = 28,
+    val cameraRingOffsetX: Int = 0,
+    val cameraRingOffsetY: Int = 0,
     val cameraRingThickness: Int = 2,
     val cameraRingBrightness: Int = 100,
     val cameraRingColor: Int = 0,
