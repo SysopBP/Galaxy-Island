@@ -6,7 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
-enum class BridgeHealth { OFF, HEALTHY, FALLBACK, RECONNECTING }
+enum class BridgeHealth { OFF, HEALTHY, FALLBACK, RECONNECTING, DEGRADED }
 
 data class PrivilegedBridgeState(
     val mode: RootMode = RootMode.AUTOMATIC,
@@ -15,6 +15,9 @@ data class PrivilegedBridgeState(
     val systemUiBridgeAvailable: Boolean = false,
     val fallbackActive: Boolean = true,
     val health: BridgeHealth = BridgeHealth.FALLBACK,
+    val watchdogEnabled: Boolean = true,
+    val recoveryAttempts: Int = 0,
+    val lastRecoveryElapsedMs: Long = 0L,
     val lastHeartbeatElapsedMs: Long = 0L,
     val consecutiveFailures: Int = 0,
 ) {
@@ -23,6 +26,7 @@ data class PrivilegedBridgeState(
             BridgeHealth.OFF -> "Root enhancements off · Android fallback active"
             BridgeHealth.HEALTHY -> "Bridge ✓ healthy"
             BridgeHealth.RECONNECTING -> "Bridge reconnecting… · fallback remains active"
+            BridgeHealth.DEGRADED -> "Bridge degraded ⚠ · fallback active"
             BridgeHealth.FALLBACK -> "Fallback • active"
         }
 }
@@ -41,6 +45,9 @@ object PrivilegedBridge {
 
         val root = hasRoot()
         val failures = if (root) 0 else (previous?.consecutiveFailures ?: 0) + 1
+        val wasActive = previous?.rootBridgeActive == true
+        val recoveryAttempts = if (root) 0 else (previous?.recoveryAttempts ?: 0) +
+            if (wasActive || failures >= 2) 1 else 0
         PrivilegedBridgeState(
             mode = mode,
             rootAvailable = root,
@@ -48,8 +55,16 @@ object PrivilegedBridge {
             // Root does not imply an injected SystemUI hook.
             systemUiBridgeAvailable = previous?.systemUiBridgeAvailable == true && root,
             fallbackActive = !root,
-            health = if (root) BridgeHealth.HEALTHY
-                else if (failures > 1) BridgeHealth.RECONNECTING else BridgeHealth.FALLBACK,
+            health = when {
+                root -> BridgeHealth.HEALTHY
+                failures >= 5 -> BridgeHealth.DEGRADED
+                failures > 1 -> BridgeHealth.RECONNECTING
+                else -> BridgeHealth.FALLBACK
+            },
+            watchdogEnabled = true,
+            recoveryAttempts = recoveryAttempts,
+            lastRecoveryElapsedMs = if (!root && (wasActive || failures >= 2)) now
+                else previous?.lastRecoveryElapsedMs ?: 0L,
             lastHeartbeatElapsedMs = now,
             consecutiveFailures = failures,
         )
