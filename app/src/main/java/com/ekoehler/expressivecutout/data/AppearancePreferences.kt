@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.json.JSONObject
 
-enum class GlassStyle { STANDARD, FROSTED, DEEP_FROST, CLEAR_GLASS, BLACK_FROST }
+enum class GlassStyle { STANDARD, FROSTED, DEEP_FROST, CLEAR_GLASS, BLACK_FROST, SOFT_FROST, HEAVY_FROST, SMOKE_FROST, AMOLED_FROST, CRYSTAL_FROST, SILVER_FROST }
 
 /** Backing store for every appearance setting: fills, strokes, icons and action buttons. */
 private val Context.appearanceDataStore: DataStore<Preferences> by preferencesDataStore(name = "appearance_prefs")
