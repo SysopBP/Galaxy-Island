@@ -452,6 +452,7 @@ fun DynamicIsland(
     ringSettings: com.ekoehler.expressivecutout.data.BehaviourSettings = com.ekoehler.expressivecutout.data.BehaviourSettings(),
     ringAllowed: Boolean = true,
     cameraActive: Boolean = false,
+    microphoneActive: Boolean = false,
     cameraCenterXDp: Float? = null,
     cameraCenterYDp: Float? = null,
     permissionDotsEnabled: Boolean = false,
@@ -1146,8 +1147,10 @@ fun DynamicIsland(
         }
         // Real camera ownership is an independent ring source. Existing notification/call/timer
         // policy remains unchanged; camera activity shares the proven renderer.
+        val callRingActive = ringEvent?.call != null
         val cameraRingActive = cameraActive
-        val shouldMountRing = ringAllowed && (cameraRingActive || (!ringExpired && ringEvent != null))
+        val microphoneRingActive = microphoneActive && ringSettings.cameraRingEnabled
+        val shouldMountRing = ringAllowed && (cameraRingActive || microphoneRingActive || callRingActive || (!ringExpired && ringEvent != null))
         LaunchedEffect(cameraActive, cameraRingActive, shouldMountRing) {
             Log.i("GalaxyIslandCameraRing",
                 "camera-handoff active=$cameraActive enabled=${ringSettings.cameraRingEnabled} mount=$shouldMountRing")
