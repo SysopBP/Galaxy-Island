@@ -830,6 +830,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         appearancePreferences.setTransparentPill(enabled)
     }
 
+    fun setTransparentPillStyle(style: com.ekoehler.expressivecutout.data.TransparentPillStyle) = viewModelScope.launch {
+        appearancePreferences.setTransparentPillStyle(style)
+    }
+
     fun setExpandedCardOpacity(opacity: Float) = viewModelScope.launch {
         appearancePreferences.setExpandedCardOpacity(opacity)
     }
