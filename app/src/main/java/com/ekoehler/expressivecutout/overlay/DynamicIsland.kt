@@ -157,6 +157,7 @@ import com.ekoehler.expressivecutout.data.AnimationBounce
 import com.ekoehler.expressivecutout.data.AnimationSpeed
 import com.ekoehler.expressivecutout.data.AnimationStyle
 import com.ekoehler.expressivecutout.data.GlassStyle
+import com.ekoehler.expressivecutout.data.TransparentPillStyle
 import com.ekoehler.expressivecutout.data.AppearanceSettings
 import com.ekoehler.expressivecutout.data.CenterShortcut
 import com.ekoehler.expressivecutout.data.CutoutColor
@@ -1247,7 +1248,23 @@ internal fun IslandSurface(
     val normalBaseColor = appearance.backgroundNormal.resolveBaseColor(appColor, adaptiveColor)
     val expandedBaseColor = appearance.backgroundExpanded.resolveBaseColor(appColor, adaptiveColor)
     val glassExpandedBaseColor = expandedBaseColor.copy(alpha = minOf(expandedBaseColor.alpha, appearance.expandedCardOpacity))
-    val resolvedNormalBaseColor = if (appearance.transparentPill) normalBaseColor.copy(alpha = 0f) else normalBaseColor
+    val transparentAlpha = when (appearance.transparentPillStyle) {
+        TransparentPillStyle.PURE, TransparentPillStyle.EDGE_ONLY -> 0f
+        TransparentPillStyle.GLASS -> 0.07f
+        TransparentPillStyle.FROSTED -> 0.14f
+        TransparentPillStyle.SOFT_FROST -> 0.10f
+        TransparentPillStyle.SMOKE -> 0.20f
+        TransparentPillStyle.AMOLED -> 0.26f
+        TransparentPillStyle.CRYSTAL -> 0.05f
+    }
+    val resolvedNormalBaseColor = if (appearance.transparentPill) {
+        val tint = when (appearance.transparentPillStyle) {
+            TransparentPillStyle.SMOKE, TransparentPillStyle.AMOLED -> Color.Black
+            TransparentPillStyle.CRYSTAL -> Color.White
+            else -> normalBaseColor
+        }
+        tint.copy(alpha = transparentAlpha)
+    } else normalBaseColor
     val currentBaseColor = lerp(resolvedNormalBaseColor, glassExpandedBaseColor, progress)
 
     val repColor = lerp(
@@ -1330,7 +1347,17 @@ internal fun IslandSurface(
                             .background(expandedBrush),
                     )
                 }
-                val glassOverlayAlpha = if (!appearance.glassEnabled) 0f else if (progress > 0f) appearance.expandedCardOpacity else if (appearance.transparentPill) 0f else 1f
+                val transparentGlassAlpha = when (appearance.transparentPillStyle) {
+                    TransparentPillStyle.PURE -> 0f
+                    TransparentPillStyle.EDGE_ONLY -> 0.22f
+                    TransparentPillStyle.GLASS -> 0.42f
+                    TransparentPillStyle.FROSTED -> 0.62f
+                    TransparentPillStyle.SOFT_FROST -> 0.46f
+                    TransparentPillStyle.SMOKE -> 0.38f
+                    TransparentPillStyle.AMOLED -> 0.30f
+                    TransparentPillStyle.CRYSTAL -> 0.72f
+                }
+                val glassOverlayAlpha = if (!appearance.glassEnabled) 0f else if (progress > 0f) appearance.expandedCardOpacity else if (appearance.transparentPill) transparentGlassAlpha else 1f
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
