@@ -156,6 +156,7 @@ import com.ekoehler.expressivecutout.data.SentAlignment
 import com.ekoehler.expressivecutout.data.AnimationBounce
 import com.ekoehler.expressivecutout.data.AnimationSpeed
 import com.ekoehler.expressivecutout.data.AnimationStyle
+import com.ekoehler.expressivecutout.data.GlassStyle
 import com.ekoehler.expressivecutout.data.AppearanceSettings
 import com.ekoehler.expressivecutout.data.CenterShortcut
 import com.ekoehler.expressivecutout.data.CutoutColor
@@ -1257,8 +1258,41 @@ internal fun IslandSurface(
 
     val autoContentColor = if (repColor.luminance() > 0.5f) PILL_TEXT_COLOR_DARK else PILL_TEXT_COLOR
     val contentColor = appearance.textColor?.resolve(appColor, adaptiveColor) ?: autoContentColor
+    val glassEdge = when (appearance.glassStyle) {
+        GlassStyle.STANDARD -> GalaxyGlassEdge.copy(alpha = 0.18f)
+        GlassStyle.FROSTED -> GalaxyGlassEdge
+        GlassStyle.DEEP_FROST -> GalaxyGlassEdge.copy(alpha = 0.38f)
+        GlassStyle.CLEAR_GLASS -> Color.White.copy(alpha = 0.20f)
+        GlassStyle.BLACK_FROST -> Color.White.copy(alpha = 0.16f)
+        GlassStyle.SOFT_FROST -> Color.White.copy(alpha = 0.22f)
+        GlassStyle.HEAVY_FROST -> Color.White.copy(alpha = 0.42f)
+        GlassStyle.SMOKE_FROST -> Color.White.copy(alpha = 0.19f)
+        GlassStyle.AMOLED_FROST -> Color.White.copy(alpha = 0.13f)
+        GlassStyle.CRYSTAL_FROST -> Color.White.copy(alpha = 0.48f)
+        GlassStyle.SILVER_FROST -> Color.White.copy(alpha = 0.34f)
+    }
+    val glassShade = when (appearance.glassStyle) {
+        GlassStyle.CLEAR_GLASS, GlassStyle.CRYSTAL_FROST -> Color.White.copy(alpha = 0.035f)
+        GlassStyle.BLACK_FROST -> Color.Black.copy(alpha = 0.38f)
+        GlassStyle.SMOKE_FROST -> Color.Black.copy(alpha = 0.27f)
+        GlassStyle.AMOLED_FROST -> Color.Black.copy(alpha = 0.52f)
+        GlassStyle.DEEP_FROST, GlassStyle.HEAVY_FROST -> Color.Black.copy(alpha = 0.22f)
+        GlassStyle.SILVER_FROST -> Color.White.copy(alpha = 0.08f)
+        GlassStyle.SOFT_FROST -> Color.Black.copy(alpha = 0.08f)
+        else -> GalaxyGlassShade
+    }
+    val glassHighlight = when (appearance.glassStyle) {
+        GlassStyle.CLEAR_GLASS -> Color.White.copy(alpha = 0.18f)
+        GlassStyle.CRYSTAL_FROST -> Color.White.copy(alpha = 0.48f)
+        GlassStyle.SILVER_FROST -> Color.White.copy(alpha = 0.38f)
+        GlassStyle.HEAVY_FROST -> Color.White.copy(alpha = 0.40f)
+        GlassStyle.AMOLED_FROST, GlassStyle.BLACK_FROST -> Color.White.copy(alpha = 0.15f)
+        GlassStyle.SOFT_FROST -> Color.White.copy(alpha = 0.24f)
+        GlassStyle.SMOKE_FROST -> Color.White.copy(alpha = 0.18f)
+        else -> GalaxyGlassHighlight
+    }
     val border = if (appearance.glassEnabled) {
-        BorderStroke(1.dp, GalaxyGlassEdge)
+        BorderStroke(1.dp, glassEdge)
     } else if (appearance.strokeEnabled) {
         val baseColor = appearance.strokeColor.resolve(appColor, adaptiveColor)
         val strokeFinalColor = baseColor.copy(alpha = (baseColor.alpha * appearance.strokeOpacity).coerceIn(0f, 1f))
@@ -1301,7 +1335,7 @@ internal fun IslandSurface(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer { alpha = glassOverlayAlpha }
-                        .background(GalaxyGlassShade),
+                        .background(glassShade),
                 )
                 Box(
                     modifier = Modifier
@@ -1323,7 +1357,7 @@ internal fun IslandSurface(
                         .fillMaxWidth()
                         .height(1.25.dp)
                         .graphicsLayer { alpha = glassOverlayAlpha }
-                        .background(GalaxyGlassHighlight),
+                        .background(glassHighlight),
                 )
                 // Expanded pop-outs get an extra glass stack so they read as the pill unfolding
                 // into a larger pane rather than a flat notification card. These layers fade in
