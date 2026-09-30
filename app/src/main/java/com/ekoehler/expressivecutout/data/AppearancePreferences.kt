@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.map
 import org.json.JSONObject
 
 enum class GlassStyle { STANDARD, FROSTED, DEEP_FROST, CLEAR_GLASS, BLACK_FROST, SOFT_FROST, HEAVY_FROST, SMOKE_FROST, AMOLED_FROST, CRYSTAL_FROST, SILVER_FROST }
+enum class TransparentPillStyle { PURE, GLASS, FROSTED, SOFT_FROST, SMOKE, AMOLED, CRYSTAL, EDGE_ONLY }
 
 /** Backing store for every appearance setting: fills, strokes, icons and action buttons. */
 private val Context.appearanceDataStore: DataStore<Preferences> by preferencesDataStore(name = "appearance_prefs")
@@ -31,6 +32,7 @@ data class AppearanceSettings(
     val glassEnabled: Boolean = DEFAULT_GLASS_ENABLED,
     val glassStyle: GlassStyle = DEFAULT_GLASS_STYLE,
     val transparentPill: Boolean = DEFAULT_TRANSPARENT_PILL,
+    val transparentPillStyle: TransparentPillStyle = DEFAULT_TRANSPARENT_PILL_STYLE,
     val expandedCardOpacity: Float = DEFAULT_EXPANDED_CARD_OPACITY,
     val shadowEnabled: Boolean = DEFAULT_SHADOW_ENABLED,
     val strokeEnabled: Boolean = DEFAULT_STROKE_ENABLED,
@@ -59,6 +61,7 @@ data class AppearanceSettings(
         const val DEFAULT_GLASS_ENABLED = true
         val DEFAULT_GLASS_STYLE = GlassStyle.FROSTED
         const val DEFAULT_TRANSPARENT_PILL = false
+        val DEFAULT_TRANSPARENT_PILL_STYLE = TransparentPillStyle.PURE
         const val DEFAULT_EXPANDED_CARD_OPACITY = 0.82f
         const val DEFAULT_SHADOW_ENABLED = true
         const val DEFAULT_STROKE_ENABLED = false
@@ -109,6 +112,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
             glassEnabled = prefs[GLASS_ENABLED] ?: AppearanceSettings.DEFAULT_GLASS_ENABLED,
             glassStyle = prefs[GLASS_STYLE]?.let { runCatching { GlassStyle.valueOf(it) }.getOrNull() } ?: AppearanceSettings.DEFAULT_GLASS_STYLE,
             transparentPill = prefs[TRANSPARENT_PILL] ?: AppearanceSettings.DEFAULT_TRANSPARENT_PILL,
+            transparentPillStyle = prefs[TRANSPARENT_PILL_STYLE]?.let { runCatching { TransparentPillStyle.valueOf(it) }.getOrNull() } ?: AppearanceSettings.DEFAULT_TRANSPARENT_PILL_STYLE,
             expandedCardOpacity = (prefs[EXPANDED_CARD_OPACITY] ?: AppearanceSettings.DEFAULT_EXPANDED_CARD_OPACITY).coerceIn(0f, 1f),
             shadowEnabled = prefs[SHADOW_ENABLED] ?: AppearanceSettings.DEFAULT_SHADOW_ENABLED,
             strokeEnabled = prefs[STROKE_ENABLED] ?: AppearanceSettings.DEFAULT_STROKE_ENABLED,
@@ -154,6 +158,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
             put("glassEnabled", s.glassEnabled)
             put("glassStyle", s.glassStyle.name)
             put("transparentPill", s.transparentPill)
+            put("transparentPillStyle", s.transparentPillStyle.name)
             put("expandedCardOpacity", s.expandedCardOpacity.toDouble())
             put("shadowEnabled", s.shadowEnabled)
             put("strokeEnabled", s.strokeEnabled)
@@ -191,6 +196,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
             if (obj.has("glassEnabled")) it[GLASS_ENABLED] = obj.getBoolean("glassEnabled")
             if (obj.has("glassStyle")) GlassStyle.entries.firstOrNull { style -> style.name == obj.optString("glassStyle") }?.let { style -> it[GLASS_STYLE] = style.name }
             if (obj.has("transparentPill")) it[TRANSPARENT_PILL] = obj.getBoolean("transparentPill")
+            if (obj.has("transparentPillStyle")) TransparentPillStyle.entries.firstOrNull { style -> style.name == obj.optString("transparentPillStyle") }?.let { style -> it[TRANSPARENT_PILL_STYLE] = style.name }
             if (obj.has("expandedCardOpacity")) it[EXPANDED_CARD_OPACITY] = obj.getDouble("expandedCardOpacity").toFloat().coerceIn(0f, 1f)
             if (obj.has("shadowEnabled")) it[SHADOW_ENABLED] = obj.getBoolean("shadowEnabled")
             if (obj.has("strokeEnabled")) it[STROKE_ENABLED] = obj.getBoolean("strokeEnabled")
@@ -262,6 +268,11 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
 
     suspend fun setTransparentPill(enabled: Boolean) = context.appearanceDataStore.edit {
         it[TRANSPARENT_PILL] = enabled
+    }
+
+    suspend fun setTransparentPillStyle(style: TransparentPillStyle) = context.appearanceDataStore.edit {
+        it[TRANSPARENT_PILL_STYLE] = style.name
+        it[TRANSPARENT_PILL] = true
     }
 
     suspend fun setExpandedCardOpacity(opacity: Float) = context.appearanceDataStore.edit {
@@ -379,6 +390,7 @@ class AppearancePreferences(private val context: Context) : JsonSerializable {
         val GLASS_ENABLED = booleanPreferencesKey("glass_enabled")
         val GLASS_STYLE = stringPreferencesKey("glass_style")
         val TRANSPARENT_PILL = booleanPreferencesKey("transparent_pill")
+        val TRANSPARENT_PILL_STYLE = stringPreferencesKey("transparent_pill_style")
         val EXPANDED_CARD_OPACITY = floatPreferencesKey("expanded_card_opacity")
         val SHADOW_ENABLED = booleanPreferencesKey("shadow_enabled")
         val STROKE_ENABLED = booleanPreferencesKey("stroke_enabled")
