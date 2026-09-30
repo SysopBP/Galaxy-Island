@@ -44,6 +44,21 @@ internal object AppPalette {
         surfaceContainerHighest = lerp(Color.Black, scheme.primary, AMOLED_SURFACE_BLEND),
     )
 
+    /** AMOLED base with translucent-looking glass surfaces and bright hairline-friendly contrast. */
+    fun glassAmoled(scheme: ColorScheme) = scheme.copy(
+        background = Color.Black,
+        surface = Color(0xFF070909),
+        surfaceContainerLowest = Color.Black,
+        surfaceContainerLow = Color(0xFF090B0B),
+        surfaceContainer = lerp(Color(0xFF080A0A), scheme.primary, .10f),
+        surfaceContainerHigh = lerp(Color(0xFF0B0D0D), scheme.primary, .14f),
+        surfaceContainerHighest = lerp(Color(0xFF101313), scheme.primary, .18f),
+        surfaceVariant = lerp(Color(0xFF0B0D0D), scheme.primary, .12f),
+        outline = Color.White.copy(alpha = .42f),
+        outlineVariant = Color.White.copy(alpha = .20f),
+        surfaceTint = scheme.primary.copy(alpha = .55f),
+    )
+
     /** Blend limits preserve foreground contrast even for black or white custom seeds. */
     private const val OPAQUE = 0xFF000000L
     private const val PRIMARY_BLEND = .60f
