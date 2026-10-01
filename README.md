@@ -6,6 +6,27 @@
 
 > **Modified version — Galaxy Island, 2026-09-19.** Based on EvanKoe's Expressive Cutout 0.2.0-beta. Adds persistent notification retention, a screen-on camera ring, per-app haptics, reminders, and a Samsung-style preset. See [preview setup and behavior](RING-PREVIEW.md). Original credits and GPL-3.0 licensing are retained. This preview is not an official upstream or Samsung release.
 
+## September 30–October 1, 2026 — Current development update
+
+### Camera ring & activity
+- Camera ring now follows **real physical camera activity** instead of relying only on synthetic/test events.
+- Expanded ring coverage for **live notifications, silent visual notifications, calls, expanded cards and microphone activity**.
+- Call and microphone renderer wiring was corrected, with regression tests updated for the broader visual-alert policy.
+
+### Root & System Bridge
+- Added a dedicated **Root & System Bridge** settings screen.
+- Root mode, watchdog/fallback controls and SystemUI bridge status are exposed directly from Settings.
+- Root/System Bridge remains separate from the standard Shizuku settings so each integration can be diagnosed independently.
+
+### Galaxy AI & customization
+- Added a dedicated **Galaxy AI** settings category for assistant/AI responses, shortcuts and island controls.
+- Added/exposed **frosted pill** customization and continued Galaxy Glass surface refinements.
+- Expanded glass-card controls include user-adjustable expanded-card opacity and more responsive notification swipe dismissal.
+
+### Project separation
+- Galaxy Island remains the floating island/camera-ring project. **AndroGlass is maintained separately** for status-bar replacement work.
+
+
 <div align="center">
 
 <img width="1280" height="640" alt="Frame 25" src="https://github.com/user-attachments/assets/d801de28-eac6-4ffd-8474-55d9a8af4dc3" />
