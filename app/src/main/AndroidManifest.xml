@@ -24,6 +24,7 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
         <package android:name="moe.shizuku.privileged.api" />
+        <package android:name="com.sysopbp.tokenx" />
     </queries>
 
     <application
