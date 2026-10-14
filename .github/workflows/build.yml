@@ -2,7 +2,7 @@ name: Build Galaxy Island
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/tokenx-shizuku-detection-20261014]
   workflow_dispatch:
 
 concurrency:
