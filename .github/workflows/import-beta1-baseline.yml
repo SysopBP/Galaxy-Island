@@ -1,3 +1,4 @@
+# Modified by SysopBP, 2026-10-14: pin workflow dependencies to verified commits.
 name: Import Galaxy Island Beta.1 Baseline
 
 on:
@@ -17,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Fetch canonical Beta.1 Galaxy Island APK
         shell: bash
@@ -43,7 +44,7 @@ jobs:
           test "$ACTUAL_SHA" = "$EXPECTED_SHA"
 
       - name: Upload canonical Beta.1 baseline
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: Galaxy-Island-Beta1-canonical-debug-APK
           path: baseline/Galaxy-Island-v0.5.1-beta.1-debug.apk

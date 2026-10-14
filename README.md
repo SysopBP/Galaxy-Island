@@ -45,7 +45,7 @@ colours, and all customisable down to the corner radius.
 It runs entirely on your device. The app has no internet permission at all, so nothing can
 be uploaded: no accounts, no analytics, no tracking.
 
-[![Download the latest release](https://img.shields.io/badge/Download-latest%20release-005AC1?style=for-the-badge&logo=github&logoColor=white)](https://github.com/EvanKoe/expressive-cutout/releases)
+[Download Galaxy Island previews](https://github.com/SysopBP/Galaxy-Island/releases) · [Upstream Expressive Cutout releases](https://github.com/EvanKoe/expressive-cutout/releases)
 [![Stars](https://img.shields.io/github/stars/EvanKoe/expressive-cutout?style=for-the-badge)](https://github.com/EvanKoe/expressive-cutout/stargazers)
 [![License](https://img.shields.io/badge/license-GPLv3-blue?style=for-the-badge)](LICENSE)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
@@ -80,7 +80,7 @@ be uploaded: no accounts, no analytics, no tracking.
 
 <div align="center">
 
-[![Download the latest release](https://img.shields.io/badge/Download-latest%20release-005AC1?style=for-the-badge&logo=github&logoColor=white)](https://github.com/EvanKoe/expressive-cutout/releases)
+[Download Galaxy Island previews](https://github.com/SysopBP/Galaxy-Island/releases) · [Upstream Expressive Cutout releases](https://github.com/EvanKoe/expressive-cutout/releases)
 
 </div>
 
@@ -123,22 +123,22 @@ DISCLAIMER: This app was made as a project to learn Jetpack Compose. I used AI t
 
 Your data privacy matters. The app only requests the absolute minimum permissions required to function. Plus, it has no INTERNET access permission, which means nothing is sent on the Internet: no analytics, no usage data, no notification content stored anywhere. Everything stays on your phone. Always. This list is the whole manifest, and every entry is explained at greater length in the app, on the Permission details screen. Here are the permissions:
 - Notification access: to display your notifications in the dynamic island. Android ties media access to the same grant, so this is also what lets the music tile show what is playing and control it,
-- Accessibility service: to display over other apps. It may also read screen content, but only to make features work: it reads which app is in the foreground (so a tile can hide while you are in that app), and it reads answer text from assistant apps so the assistant tile can show you the answer. That is all it looks at — every other app is a package name and nothing more. Whatever is read is drawn on the island and immediately dropped: it is never written to storage, never logged, and — since the app has no internet permission — cannot be sent anywhere,  
-- Vibration: for haptic feedback in the app and on the cutout,  
-- Ignore battery optimisation (optional): to make sure battery optimisation does not kill the app,  
-- Post notification (optional): for testing purpose,  
-- Shizuku (optional): only for the two features Android reserves for the shell user — hiding the system status bar icons, and reading which apps are using the microphone, camera or location for the privacy dots. Shizuku is a separate app you install and start yourself, and you approve this app in its interface. Without it, those two features are unavailable and everything else works as normal,  
-- Network state: it can just read if you are connected to the internet (for the Wifi event), but cannot access it,  
+- Accessibility service: to display over other apps. It may also read screen content, but only to make features work: it reads which app is in the foreground (so a tile can hide while you are in that app), and it reads answer text from assistant apps so the assistant tile can show you the answer. That is all it looks at — every other app is a package name and nothing more. Whatever is read is drawn on the island and immediately dropped: it is never written to storage, never logged, and — since the app has no internet permission — cannot be sent anywhere,
+- Vibration: for haptic feedback in the app and on the cutout,
+- Ignore battery optimisation (optional): to make sure battery optimisation does not kill the app,
+- Post notification (optional): for testing purpose,
+- Shizuku (optional): only for the two features Android reserves for the shell user — hiding the system status bar icons, and reading which apps are using the microphone, camera or location for the privacy dots. Shizuku is a separate app you install and start yourself, and you approve this app in its interface. Without it, those two features are unavailable and everything else works as normal,
+- Network state: it can just read if you are connected to the internet (for the Wifi event), but cannot access it,
 - App list visibility (`<queries>`, not a permission you grant): on Android 11+ an app sees no other app unless it says what it needs to see. This one asks for apps that have a launcher icon, so the Apps screen can list them for the per-app switches, an app's icon can colour the island, and the app can tell whether Shizuku is installed. It is deliberately not `QUERY_ALL_PACKAGES`
 
 ## Special thanks
 
 <!-- Special thanks go here. -->
-Even if this project started as a personal app, a lot of existing projects gave me the inspiration I needed, may it be for UI or features: 
-- [Dynamic spot](https://play.google.com/store/apps/details?id=com.jamworks.dynamicspot&hl=en)  
+Even if this project started as a personal app, a lot of existing projects gave me the inspiration I needed, may it be for UI or features:
+- [Dynamic spot](https://play.google.com/store/apps/details?id=com.jamworks.dynamicspot&hl=en)
 - [Material Capsule](https://play.google.com/store/apps/details?id=com.pryshedko.mtisland&hl=en)
 
-And my very special thanks to [Sameerasw's Essential app for Android](https://github.com/sameerasw/essentials) which has an AWESOME Material You Expressive implementation. He is doing a great job and all his apps feel very polished. 
+And my very special thanks to [Sameerasw's Essential app for Android](https://github.com/sameerasw/essentials) which has an AWESOME Material You Expressive implementation. He is doing a great job and all his apps feel very polished.
 
 I would like to thank everyone that takes part to the project on Discord, Github and Reddit by submitting bugs, requesting features and creating issues.
 
