@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import rikka.shizuku.Shizuku
 
 /** The Shizuku app's package, needed to tell "not installed" apart from "not running". */
-private const val SHIZUKU_PACKAGE = "moe.shizuku.privileged.api"
+private val MANAGER_PACKAGES = listOf("com.sysopbp.tokenx", "moe.shizuku.privileged.api")
 
 /** Arbitrary code echoed back to [Shizuku.OnRequestPermissionResultListener]. */
 private const val PERMISSION_REQUEST_CODE = 4919
@@ -88,7 +88,8 @@ object ShizukuState {
 
     /** Whether the Shizuku app is installed, treating any lookup failure as absent. */
     private fun isInstalled(context: Context): Boolean = runCatching {
-        context.packageManager.getPackageInfo(SHIZUKU_PACKAGE, 0)
-        true
+        MANAGER_PACKAGES.any { packageName ->
+            runCatching { context.packageManager.getPackageInfo(packageName, 0); true }.getOrDefault(false)
+        }
     }.getOrDefault(false)
 }
