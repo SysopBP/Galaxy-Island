@@ -69,10 +69,9 @@ object ShizukuState {
      */
     private fun currentStatus(): ShizukuStatus {
         val context = appContext ?: return ShizukuStatus.NOT_INSTALLED
-        if (!isInstalled(context)) return ShizukuStatus.NOT_INSTALLED
+        if (!runCatching { Shizuku.pingBinder() }.getOrDefault(false)) return if (isInstalled(context)) ShizukuStatus.NOT_RUNNING else ShizukuStatus.NOT_INSTALLED
         // pingBinder is the only honest "is it running" check — the grant can read fine while the
         // process is gone, exactly like the accessibility service after an app update.
-        if (!runCatching { Shizuku.pingBinder() }.getOrDefault(false)) return ShizukuStatus.NOT_RUNNING
         // Pre-v11 Shizuku used a different, now-removed permission handshake; treat it as needing
         // attention rather than silently failing every privileged call.
         if (Shizuku.isPreV11()) return ShizukuStatus.PERMISSION_REQUIRED
