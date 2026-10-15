@@ -4,6 +4,11 @@
 
 [Download the private preview](https://github.com/SysopBP/Galaxy-Island/releases) · [Setup and features](RING-PREVIEW.md)
 
+> **Build source:** Galaxy Island development APKs are produced by [GitHub Actions](https://github.com/SysopBP/Galaxy-Island/actions/workflows/build.yml). The upstream Expressive Cutout download links further below refer to the original project, not Galaxy Island builds.
+>
+> **Integration note:** Galaxy Island's Shizuku, TokenX compatibility, and D2 connections are separate from SoClear/OneUIX. No OneUIX dependency is declared in the app Gradle configuration. This statement is not a complete source-provenance audit; preserve applicable third-party attribution.
+
+
 > **Modified version — Galaxy Island, 2026-09-19.** Based on EvanKoe's Expressive Cutout 0.2.0-beta. Adds persistent notification retention, a screen-on camera ring, per-app haptics, reminders, and a Samsung-style preset. See [preview setup and behavior](RING-PREVIEW.md). Original credits and GPL-3.0 licensing are retained. This preview is not an official upstream or Samsung release.
 
 ## September 30–October 1, 2026 — Current development update
